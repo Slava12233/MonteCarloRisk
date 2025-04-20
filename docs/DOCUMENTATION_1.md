@@ -1,0 +1,676 @@
+# Google ADK Agent Starter Kit
+
+## Executive Summary
+
+As the co-founder and CTO of our AI Agents company, I'm pleased to present our Google ADK Agent Starter Kit. This toolkit provides a robust foundation for building intelligent agents using Google's Agent Development Kit (ADK). It implements a true custom agent architecture that follows Google's recommended patterns while providing flexibility for future expansion.
+
+This documentation serves as a comprehensive guide for our development team to understand, use, and extend the starter kit for building specialized agents for various use cases.
+
+## Table of Contents
+
+1. [Introduction](#introduction)
+2. [Architecture Overview](#architecture-overview)
+3. [Core Components](#core-components)
+4. [Implementation Details](#implementation-details)
+5. [Getting Started](#getting-started)
+6. [Development Workflow](#development-workflow)
+7. [Testing](#testing)
+8. [Deployment](#deployment)
+9. [Best Practices](#best-practices)
+10. [Troubleshooting](#troubleshooting)
+11. [Future Roadmap](#future-roadmap)
+12. [References](#references)
+
+## Introduction
+
+The Google ADK Agent Starter Kit provides a standardized foundation for building intelligent agents using Google's Agent Development Kit. It implements a true custom agent architecture that inherits directly from Google's BaseAgent class and follows the recommended patterns for custom agent development.
+
+### Key Features
+
+- **True Custom Agent Architecture**: Inherits directly from Google's BaseAgent class and implements the required methods.
+- **LLM Integration**: Uses Google's Gemini models for natural language understanding and generation.
+- **Tool Integration**: Seamlessly integrates with Google Search and custom tools.
+- **Flexible Orchestration**: Supports complex orchestration patterns like conditional logic and state management.
+- **Comprehensive Testing**: Includes unit tests for all components.
+- **Interactive Mode**: Supports interactive conversations with the agent.
+
+## Architecture Overview
+
+Our starter kit follows a layered architecture that separates concerns and promotes modularity:
+
+```
+┌─────────────────────────────────────────┐
+│               Client Layer              │
+│  (CLI, Web UI, API, etc.)               │
+└───────────────┬─────────────────────────┘
+                │
+┌───────────────▼─────────────────────────┐
+│             Agent Layer                 │
+│  (BaseAgent, SearchAgent, etc.)         │
+└───────────────┬─────────────────────────┘
+                │
+┌───────────────▼─────────────────────────┐
+│           Orchestration Layer           │
+│  (Custom logic in _run_async_impl)      │
+└───────────────┬─────────────────────────┘
+                │
+┌───────────────▼─────────────────────────┐
+│             Tool Layer                  │
+│  (Google Search, Custom Tools, etc.)    │
+└───────────────┬─────────────────────────┘
+                │
+┌───────────────▼─────────────────────────┐
+│             Model Layer                 │
+│  (Gemini models via Google AI API)      │
+└─────────────────────────────────────────┘
+```
+
+### Key Design Principles
+
+1. **Separation of Concerns**: Each layer has a specific responsibility.
+2. **Modularity**: Components are designed to be reusable and replaceable.
+3. **Extensibility**: The architecture allows for easy extension with new agents, tools, and models.
+4. **Testability**: All components are designed to be easily testable.
+
+## Core Components
+
+### BaseAgent
+
+The `BaseAgent` class is the foundation of our agent architecture. It inherits directly from Google's `BaseAgent` class and implements the required methods for custom agent development.
+
+Key features:
+- Implements `_run_async_impl` for custom orchestration logic
+- Manages sub-agents, including an LlmAgent for reasoning
+- Handles session management and state
+- Provides convenience methods for running the agent and getting responses
+
+### SearchAgent
+
+The `SearchAgent` class extends `BaseAgent` to provide a specialized agent that can search the web using Google Search to answer questions.
+
+Key features:
+- Integrates with Google Search tool
+- Implements custom orchestration logic for search queries
+- Provides a convenient `search` method for direct use
+
+### Custom Tools
+
+The starter kit includes support for custom tools that can be used by agents to perform specific tasks.
+
+Key features:
+- Implements a `CustomTool` class for creating new tools
+- Provides examples of custom tool implementation
+- Includes unit tests for custom tools
+
+## Implementation Details
+
+### BaseAgent Implementation
+
+The `BaseAgent` class inherits from Google's `BaseAgent` class and implements the required methods for custom agent development:
+
+```python
+class BaseAgent(ADKBaseAgent):
+    """
+    Base agent template with common functionality.
+
+    This class provides a standardized foundation for building agents with
+    Google's Agent Development Kit (ADK). It inherits directly from ADK's BaseAgent
+    and implements custom orchestration logic.
+    """
+
+    # Define model_config for Pydantic
+    model_config = {"arbitrary_types_allowed": True}
+
+    def __init__(
+        self,
+        name: str,
+        model: str = DEFAULT_MODEL,
+        description: str = "",
+        instruction: str = "",
+        tools: Optional[List[Any]] = None,
+        sub_agents: Optional[List[Any]] = None,
+        session_service: Optional[Any] = None,
+        app_name: Optional[str] = None,
+        **kwargs,
+    ):
+        # Initialize the parent class first
+        super().__init__(
+            name=name,
+            description=description,
+            sub_agents=sub_agents or [],
+            **kwargs,
+        )
+        
+        # Store parameters as instance attributes
+        self._model = model
+        self._instruction = instruction
+        self._tools = tools or []
+        self._app_name = app_name or name
+        
+        # Create the LLM agent that will handle the actual reasoning
+        self._llm_agent = LlmAgent(
+            name=f"{name}_llm",
+            model=model or DEFAULT_MODEL,  # Ensure model is never None
+            description=description,
+            instruction=instruction,
+            tools=self._tools,
+        )
+        
+        # Add the LLM agent as a sub-agent if not already added
+        if not any(agent.name == self._llm_agent.name for agent in self.sub_agents):
+            self.sub_agents.append(self._llm_agent)
+        
+        # Set up session management
+        self._session_service = session_service or InMemorySessionService()
+        
+        # Create a runner for direct use
+        self._runner = Runner(
+            agent=self,
+            app_name=self._app_name,
+            session_service=self._session_service,
+        )
+
+    @override
+    async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:
+        """
+        Implement the custom orchestration logic for this agent.
+        
+        This is the core method that defines how this agent processes requests and
+        orchestrates its sub-agents.
+        """
+        logger.info(f"[{self.name}] Starting agent execution")
+        
+        # Process the user's message using the LLM agent
+        logger.info(f"[{self.name}] Running LLM agent")
+        async for event in self._llm_agent.run_async(ctx):
+            # You can add custom logic here to process events
+            yield event
+        
+        logger.info(f"[{self.name}] Agent execution completed")
+```
+
+### SearchAgent Implementation
+
+The `SearchAgent` class extends `BaseAgent` to provide a specialized agent that can search the web using Google Search:
+
+```python
+class SearchAgent(BaseAgent):
+    """
+    Search agent implementation using Google Search.
+
+    This class extends the BaseAgent to provide a specialized agent that can
+    search the web using Google Search to answer questions.
+    """
+
+    def __init__(
+        self,
+        name: str = "search_agent",
+        model: str = "gemini-2.0-flash",
+        description: str = "Agent to answer questions using Google Search.",
+        instruction: str = "I can answer your questions by searching the internet. Just ask me anything!",
+        session_service: Optional[Any] = None,
+        app_name: Optional[str] = None,
+        additional_tools: Optional[List[Any]] = None,
+    ):
+        # Combine Google Search with any additional tools
+        tools = [google_search]
+        if additional_tools:
+            tools.extend(additional_tools)
+
+        super().__init__(
+            name=name,
+            model=model,
+            description=description,
+            instruction=instruction,
+            tools=tools,
+            session_service=session_service,
+            app_name=app_name,
+        )
+
+    @override
+    async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:
+        """
+        Implement the custom orchestration logic for this search agent.
+        
+        This method simply delegates to the LLM agent, which has access to the Google Search tool.
+        """
+        # For a simple search agent, we just delegate to the LLM agent
+        async for event in self._llm_agent.run_async(ctx):
+            yield event
+
+    def search(self, query: str, user_id: str = "user", session_id: str = "session") -> str:
+        """
+        Search for information using Google Search.
+
+        This is a convenience method that runs the agent with a query and returns
+        the final response.
+        """
+        response = self.run_and_get_response(user_id, session_id, query)
+        return response or "No response from the agent."
+```
+
+### Custom Tools Implementation
+
+The starter kit includes support for custom tools:
+
+```python
+def get_current_time() -> str:
+    """
+    Get the current time.
+
+    Returns:
+        str: The current time in ISO format.
+    """
+    return datetime.datetime.now().isoformat()
+
+def get_random_number(min_value: int = 0, max_value: int = 100) -> int:
+    """
+    Generate a random number between min_value and max_value.
+
+    Args:
+        min_value: The minimum value (inclusive).
+        max_value: The maximum value (inclusive).
+
+    Returns:
+        int: A random number between min_value and max_value.
+    """
+    return random.randint(min_value, max_value)
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.8 or higher
+- Google API key for Gemini models
+- Google Cloud project (for Vertex AI deployment)
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-organization/google-adk-agent-starter-kit.git
+   cd google-adk-agent-starter-kit
+   ```
+
+2. Create a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your API keys and configuration
+   ```
+
+### Running the Agent
+
+#### Interactive Mode
+
+Run the agent in interactive mode:
+
+```bash
+python run.py run search --interactive
+```
+
+This will start an interactive session where you can chat with the agent.
+
+#### Programmatic Use
+
+You can also use the agent programmatically in your code:
+
+```python
+from src.agents.search_agent import SearchAgent
+
+# Create a search agent
+agent = SearchAgent(
+    name="my_search_agent",
+    description="My custom search agent",
+    instruction="Answer questions using Google Search",
+)
+
+# Search for information
+response = agent.search("What is the capital of France?")
+print(response)
+```
+
+## Development Workflow
+
+### Creating a New Agent
+
+To create a new agent, extend the `BaseAgent` class and implement the required methods:
+
+```python
+from src.agents.base_agent import BaseAgent
+
+class MyCustomAgent(BaseAgent):
+    """
+    My custom agent implementation.
+    """
+
+    def __init__(
+        self,
+        name: str = "my_custom_agent",
+        model: str = "gemini-2.0-flash",
+        description: str = "My custom agent",
+        instruction: str = "I am a custom agent",
+        session_service: Optional[Any] = None,
+        app_name: Optional[str] = None,
+        additional_tools: Optional[List[Any]] = None,
+    ):
+        # Initialize tools
+        tools = []
+        if additional_tools:
+            tools.extend(additional_tools)
+
+        super().__init__(
+            name=name,
+            model=model,
+            description=description,
+            instruction=instruction,
+            tools=tools,
+            session_service=session_service,
+            app_name=app_name,
+        )
+
+    @override
+    async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:
+        """
+        Implement the custom orchestration logic for this agent.
+        """
+        # Implement your custom logic here
+        async for event in self._llm_agent.run_async(ctx):
+            yield event
+```
+
+### Creating a New Tool
+
+To create a new tool, define a function with a descriptive docstring:
+
+```python
+def my_custom_tool(param1: str, param2: int) -> str:
+    """
+    My custom tool that does something useful.
+
+    Args:
+        param1: The first parameter.
+        param2: The second parameter.
+
+    Returns:
+        str: The result of the tool.
+    """
+    # Implement your tool logic here
+    return f"Result: {param1}, {param2}"
+```
+
+Then, add the tool to your agent:
+
+```python
+from src.tools.custom_tools import my_custom_tool
+
+agent = MyCustomAgent(
+    name="my_agent",
+    additional_tools=[my_custom_tool],
+)
+```
+
+### Advanced Orchestration
+
+For more complex orchestration patterns, you can implement custom logic in the `_run_async_impl` method:
+
+```python
+@override
+async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:
+    """
+    Implement complex orchestration logic.
+    """
+    # Get the user's message from the context
+    user_message = ctx.session.state.get("user_message", "")
+    
+    # Conditional logic based on the message
+    if "search" in user_message.lower():
+        # Use the search agent
+        async for event in self._search_agent.run_async(ctx):
+            yield event
+    elif "calculate" in user_message.lower():
+        # Use the calculator agent
+        async for event in self._calculator_agent.run_async(ctx):
+            yield event
+    else:
+        # Use the default LLM agent
+        async for event in self._llm_agent.run_async(ctx):
+            yield event
+```
+
+## Testing
+
+### Running Tests
+
+Run the tests using pytest:
+
+```bash
+pytest tests/
+```
+
+### Writing Tests
+
+When creating a new agent or tool, write unit tests to ensure it works correctly:
+
+```python
+def test_my_custom_tool():
+    """Test the my_custom_tool function."""
+    result = my_custom_tool("test", 42)
+    assert result == "Result: test, 42"
+
+class TestMyCustomAgent(unittest.TestCase):
+    """Tests for the MyCustomAgent class."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.agent = MyCustomAgent(
+            name="test_agent",
+            description="Test agent",
+            instruction="Test instruction",
+        )
+
+    def test_init(self):
+        """Test initialization of the agent."""
+        self.assertEqual(self.agent.name, "test_agent")
+        self.assertEqual(self.agent.description, "Test agent")
+        self.assertEqual(self.agent._instruction, "Test instruction")
+
+    def test_run(self):
+        """Test running the agent."""
+        # Mock the necessary components
+        # ...
+        
+        # Run the agent
+        response = self.agent.run_and_get_response("user", "session", "test message")
+        
+        # Check the response
+        self.assertEqual(response, "Expected response")
+```
+
+## Deployment
+
+### Local Deployment
+
+For local development and testing, you can run the agent using the CLI:
+
+```bash
+python run.py run search --interactive
+```
+
+### Vertex AI Deployment
+
+For production deployment, you can deploy the agent to Vertex AI:
+
+1. Set up your Google Cloud project:
+   ```bash
+   gcloud config set project your-project-id
+   ```
+
+2. Enable the required APIs:
+   ```bash
+   gcloud services enable aiplatform.googleapis.com
+   ```
+
+3. Deploy the agent:
+   ```bash
+   python run.py deploy search --project your-project-id --region us-central1
+   ```
+
+## Best Practices
+
+### Agent Design
+
+1. **Keep Agents Focused**: Each agent should have a clear, specific purpose.
+2. **Use Descriptive Names**: Choose clear, descriptive names for agents and tools.
+3. **Write Clear Instructions**: Provide clear, detailed instructions for the agent.
+4. **Leverage Tools**: Use tools to extend the agent's capabilities.
+5. **Implement Proper Error Handling**: Handle errors gracefully and provide helpful error messages.
+
+### Tool Design
+
+1. **Keep Tools Simple**: Each tool should do one thing well.
+2. **Write Clear Docstrings**: Provide clear, detailed docstrings for tools.
+3. **Validate Inputs**: Validate inputs to prevent errors.
+4. **Return Structured Data**: Return structured data that's easy to process.
+5. **Handle Errors Gracefully**: Catch and handle errors appropriately.
+
+### Testing
+
+1. **Write Unit Tests**: Write unit tests for all components.
+2. **Test Edge Cases**: Test edge cases and error conditions.
+3. **Use Mocks**: Use mocks to isolate components during testing.
+4. **Test Integration**: Test the integration between components.
+5. **Automate Testing**: Set up CI/CD to run tests automatically.
+
+## Troubleshooting
+
+### Common Issues
+
+#### API Key Issues
+
+**Symptom**: Error message about invalid or missing API key.
+
+**Solution**: 
+1. Check that your API key is set correctly in the `.env` file.
+2. Verify that the API key is valid and has the necessary permissions.
+3. If using Vertex AI, ensure that the service account has the necessary permissions.
+
+#### Model Issues
+
+**Symptom**: Error message about invalid model or model not found.
+
+**Solution**:
+1. Check that the model name is correct and supported.
+2. Verify that the model is available in your region.
+3. If using a custom model, ensure that it's properly deployed and accessible.
+
+#### Tool Issues
+
+**Symptom**: Error message about tool execution failure.
+
+**Solution**:
+1. Check that the tool is properly implemented and registered.
+2. Verify that the tool's inputs are valid.
+3. Check the tool's error handling to ensure it handles errors gracefully.
+
+### Debugging
+
+#### Enabling Debug Logging
+
+To enable debug logging, set the `LOG_LEVEL` environment variable to `DEBUG`:
+
+```bash
+export LOG_LEVEL=DEBUG
+```
+
+Or in your `.env` file:
+
+```
+LOG_LEVEL=DEBUG
+```
+
+#### Using the Debugger
+
+You can use the Python debugger to step through the code:
+
+```python
+import pdb
+
+# Add a breakpoint
+pdb.set_trace()
+```
+
+#### Inspecting State
+
+To inspect the agent's state, you can add logging statements:
+
+```python
+logger.debug(f"Session state: {ctx.session.state}")
+```
+
+## Future Roadmap
+
+### Short-term Goals (1-3 months)
+
+1. **Enhance Tool Support**: Add more built-in tools for common tasks.
+2. **Improve Documentation**: Expand documentation with more examples and tutorials.
+3. **Add Monitoring**: Implement monitoring and logging for better observability.
+
+### Medium-term Goals (3-6 months)
+
+1. **Multi-agent Orchestration**: Implement more advanced multi-agent orchestration patterns.
+2. **Memory and Context Management**: Improve memory and context management for longer conversations.
+3. **Performance Optimization**: Optimize performance for faster response times.
+
+### Long-term Goals (6-12 months)
+
+1. **Advanced Reasoning**: Implement more advanced reasoning capabilities.
+2. **Multi-modal Support**: Add support for images, audio, and video.
+3. **Enterprise Integration**: Integrate with enterprise systems and workflows.
+
+## References
+
+### Google ADK Documentation
+
+- [Google ADK Overview](https://cloud.google.com/vertex-ai/docs/agent-development-kit/overview)
+- [Custom Agents](https://cloud.google.com/vertex-ai/docs/agent-development-kit/custom-agents)
+- [LLM Agents](https://cloud.google.com/vertex-ai/docs/agent-development-kit/llm-agents)
+- [Tools](https://cloud.google.com/vertex-ai/docs/agent-development-kit/tools)
+
+### Gemini API Documentation
+
+- [Gemini API Overview](https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/gemini)
+- [Gemini API Reference](https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/gemini-api)
+
+### Python Documentation
+
+- [Python 3.8 Documentation](https://docs.python.org/3.8/)
+- [asyncio Documentation](https://docs.python.org/3.8/library/asyncio.html)
+- [Pydantic Documentation](https://docs.pydantic.dev/)
+
+---
+
+## Conclusion
+
+This documentation provides a comprehensive guide to our Google ADK Agent Starter Kit. It covers the architecture, implementation details, usage instructions, and best practices for building intelligent agents using Google's Agent Development Kit.
+
+As we continue to develop and enhance this starter kit, we'll update this documentation to reflect new features and improvements. If you have any questions or feedback, please don't hesitate to reach out to the development team.
+
+Happy agent building!
+
+---
+
+*Document Version: 1.0*  
+*Last Updated: April 21, 2025*  
+*Author: [Your Name], CTO*
