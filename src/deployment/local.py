@@ -43,117 +43,11 @@ def create_app(agent: Any) -> FastAPI:
     """
     app = FastAPI(title=f"{agent.name} API", description=f"API for {agent.name}")
 
-    # Create templates directory if it doesn't exist
+    # Get the templates directory path
     templates_dir = os.path.join(os.path.dirname(__file__), "templates")
-    os.makedirs(templates_dir, exist_ok=True)
-
-    # Create static directory if it doesn't exist
+    
+    # Get the static directory path
     static_dir = os.path.join(os.path.dirname(__file__), "static")
-    os.makedirs(static_dir, exist_ok=True)
-
-    # Create simple HTML template for the UI
-    with open(os.path.join(templates_dir, "index.html"), "w") as f:
-        f.write("""
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ agent_name }} - Chat Interface</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        #chat-container {
-            height: 400px;
-            border: 1px solid #ccc;
-            padding: 10px;
-            overflow-y: auto;
-            margin-bottom: 10px;
-        }
-        .message {
-            margin-bottom: 10px;
-            padding: 8px;
-            border-radius: 5px;
-        }
-        .user {
-            background-color: #e6f7ff;
-            text-align: right;
-        }
-        .agent {
-            background-color: #f2f2f2;
-        }
-        #message-form {
-            display: flex;
-        }
-        #message-input {
-            flex-grow: 1;
-            padding: 8px;
-            margin-right: 10px;
-        }
-    </style>
-</head>
-<body>
-    <h1>{{ agent_name }} - Chat Interface</h1>
-    <div id="chat-container"></div>
-    <form id="message-form">
-        <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off">
-        <button type="submit">Send</button>
-    </form>
-
-    <script>
-        const chatContainer = document.getElementById('chat-container');
-        const messageForm = document.getElementById('message-form');
-        const messageInput = document.getElementById('message-input');
-        
-        // Function to add a message to the chat
-        function addMessage(text, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message');
-            messageDiv.classList.add(sender);
-            messageDiv.textContent = text;
-            chatContainer.appendChild(messageDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-        
-        // Handle form submission
-        messageForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const message = messageInput.value.trim();
-            if (!message) return;
-            
-            // Add user message to chat
-            addMessage(message, 'user');
-            messageInput.value = '';
-            
-            try {
-                // Send message to API
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        text: message,
-                        user_id: 'user',
-                        session_id: 'session'
-                    })
-                });
-                
-                const data = await response.json();
-                
-                // Add agent response to chat
-                addMessage(data.response, 'agent');
-            } catch (error) {
-                console.error('Error:', error);
-                addMessage('Error: Could not get response from agent', 'agent');
-            }
-        });
-    </script>
-</body>
-</html>
-        """)
 
     # Mount static files
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
@@ -243,10 +137,20 @@ def run_locally(
     
     logger.info(f"Running {agent.name} locally at http://{host}:{port}")
     
-    uvicorn.run(
-        app,
-        host=host,
-        port=port,
-        log_level=log_level,
-        reload=reload,
-    )
+    try:
+        uvicorn.run(
+            app,
+            host=host,
+            port=port,
+            log_level=log_level,
+            reload=reload,
+        )
+    except OSError as e:
+        if "address already in use" in str(e).lower() or "only one usage of each socket address" in str(e).lower():
+            # Try with a different port
+            new_port = port + 1
+            logger.warning(f"Port {port} is already in use. Trying port {new_port}...")
+            run_locally(agent, host, new_port, log_level, reload)
+        else:
+            # Re-raise other OSErrors
+            raise

@@ -671,6 +671,100 @@ Happy agent building!
 
 ---
 
-*Document Version: 1.0*  
+*Document Version: 1.1*  
 *Last Updated: April 21, 2025*  
 *Author: [Your Name], CTO*
+
+## Recent Updates
+
+The following improvements have been made to the Google ADK Agent Starter Kit:
+
+1. **Fixed Vertex AI Deployment Mechanism**: The Vertex AI deployment mechanism has been completely redesigned to correctly package and instantiate our custom agent classes. The `prepare_deployment_package` function in `src/deployment/vertex.py` now properly includes the source code in the deployment package and generates a `main.py` file that correctly imports and instantiates our `SearchAgent` class.
+
+2. **Improved CLI Extensibility**: The CLI has been refactored to use a registry pattern for agent types, making it easier to add new agent types without modifying the CLI code directly. A new `registry.py` module has been added that provides functions for registering and retrieving agent types.
+
+3. **Refactored Local Deployment UI**: The local deployment UI has been refactored to use static HTML templates and separate CSS and JavaScript files, improving maintainability and separation of concerns. The UI now has a more modern look and feel with responsive design elements.
+
+4. **Standardized Pydantic Usage**: We've implemented a hybrid approach for Pydantic usage in agent classes. This approach uses validation methods like `_validate_model()` and `_validate_tools()` to validate inputs, while maintaining compatibility with the ADK's BaseAgent class. See the [Pydantic Usage Guidelines](PYDANTIC_USAGE.md) for more details.
+
+5. **Migrated Tests to pytest**: All tests have been migrated from unittest to pytest, improving test readability and maintainability. The test suite now uses fixtures for common test scenarios and assertions use the pytest style. See the [Test Report](TEST_REPORT.md) for more details.
+
+6. **Improved Port Handling in Local Deployment**: The local deployment mechanism now handles the case where the default port is already in use by automatically trying the next available port.
+
+These improvements address the issues identified in the code review report and make the starter kit more robust and extensible.
+
+## Pydantic Usage
+
+Our starter kit uses a hybrid approach for Pydantic integration in agent classes:
+
+### Current Implementation
+
+```python
+class BaseAgent(ADKBaseAgent):
+    # Define model_config for Pydantic
+    model_config = {"arbitrary_types_allowed": True}
+
+    def __init__(
+        self,
+        name: str,
+        model: str = DEFAULT_MODEL,
+        description: str = "",
+        instruction: str = "",
+        tools: Optional[List[Any]] = None,
+        sub_agents: Optional[List[Any]] = None,
+        session_service: Optional[Any] = None,
+        app_name: Optional[str] = None,
+        **kwargs,
+    ):
+        # Validate inputs before passing to parent class
+        validated_model = self._validate_model(model)
+        validated_tools = self._validate_tools(tools)
+        validated_app_name = app_name or name
+
+        # Initialize the parent class first
+        super().__init__(
+            name=name,
+            description=description,
+            sub_agents=sub_agents or [],
+            **kwargs,
+        )
+        
+        # Store parameters as instance attributes with leading underscore
+        # to indicate they are "private"
+        self._model = validated_model
+        self._instruction = instruction
+        self._tools = validated_tools
+        self._app_name = validated_app_name
+        
+    def _validate_model(self, model: Optional[str]) -> str:
+        """Validate the model parameter."""
+        if not model:
+            return DEFAULT_MODEL
+        # Add additional validation logic here
+        return model
+        
+    def _validate_tools(self, tools: Optional[List[Any]]) -> List[Any]:
+        """Validate the tools parameter."""
+        if not tools:
+            return []
+        # Add additional validation logic here
+        return tools
+```
+
+### Key Features
+
+1. **Model Configuration**: All agent classes define `model_config = {"arbitrary_types_allowed": True}` to allow non-Pydantic types.
+
+2. **Validation Methods**: Instead of using Pydantic fields directly, we use validation methods like `_validate_model()` and `_validate_tools()` to validate inputs.
+
+3. **Private Attributes**: Parameters are stored as instance attributes with leading underscores to indicate they are "private".
+
+### Benefits
+
+This approach provides several benefits:
+- Maintains compatibility with the ADK's BaseAgent class
+- Allows for explicit validation of inputs
+- Follows Python conventions for private attributes
+- Simplifies the code structure
+
+For more details, see the [Pydantic Usage Guidelines](PYDANTIC_USAGE.md).

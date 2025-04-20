@@ -175,6 +175,7 @@ Key features:
 - Manages sub-agents, including an LlmAgent for reasoning
 - Handles session management and state
 - Provides convenience methods for running the agent and getting responses
+- Uses a hybrid approach for Pydantic with validation methods
 
 ### SearchAgent
 
@@ -231,7 +232,27 @@ For more detailed documentation, see:
 - [Comprehensive Documentation](docs/DOCUMENTATION_1.md) - Detailed guide to the starter kit
 - [Planning Document](docs/PLANNING_1.md) - Project architecture and design decisions
 - [Tasks Document](docs/TASKS_1.md) - Implementation tasks and timeline
+- [Pydantic Usage Guidelines](docs/PYDANTIC_USAGE.md) - Guidelines for using Pydantic in agent classes
+- [Test Report](docs/TEST_REPORT.md) - Test coverage and results
 - [Google ADK Documentation](https://cloud.google.com/vertex-ai/docs/agent-development-kit/overview) - Official ADK documentation
+
+## Pydantic Usage
+
+This project uses a hybrid approach for Pydantic integration in agent classes:
+
+1. **Model Configuration**: All agent classes define `model_config = {"arbitrary_types_allowed": True}` to allow non-Pydantic types.
+
+2. **Validation Methods**: Instead of using Pydantic fields directly, we use validation methods like `_validate_model()` and `_validate_tools()` to validate inputs.
+
+3. **Private Attributes**: Parameters are stored as instance attributes with leading underscores to indicate they are "private".
+
+This approach provides several benefits:
+- Maintains compatibility with the ADK's BaseAgent class
+- Allows for explicit validation of inputs
+- Follows Python conventions for private attributes
+- Simplifies the code structure
+
+For more details, see the [Pydantic Usage Guidelines](docs/PYDANTIC_USAGE.md).
 
 ## Contributing
 

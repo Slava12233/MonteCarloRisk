@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google ADK Agent Starter Kit - Project Visualization</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #0d47a1; /* Dark Blue */
+        }
+        h1 {
+            text-align: center;
+            border-bottom: 2px solid #0d47a1;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 5px;
+            margin-top: 40px;
+        }
+        pre {
+            background-color: #eee;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border: 1px solid #ccc;
+        }
+        code {
+            font-family: monospace;
+        }
+        .mermaid {
+            text-align: center;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #e3f2fd; /* Light Blue */
+            color: #0d47a1;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 5px;
+        }
+        .file-structure {
+            font-family: monospace;
+            white-space: pre;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            line-height: 1.4;
+        }
+        .component {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .component h3 {
+            margin-top: 0;
+            color: #1565c0; /* Medium Blue */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Google ADK Agent Starter Kit - Project Visualization</h1>
+
+        <section id="overview">
+            <h2>1. Project Overview</h2>
+            <p>The Google ADK Agent Starter Kit provides a standardized foundation for building AI agents using Google's Agent Development Kit (ADK). It implements a true custom agent architecture that inherits directly from Google's <code>BaseAgent</code> class and follows the recommended patterns for custom agent development. The kit includes reusable components, patterns, and examples that developers can use as templates for their own agent implementations.</p>
+
+            <h3>1.1. Goals and Objectives</h3>
+            <ul>
+                <li>Create a minimal yet complete foundation for building Google ADK agents.</li>
+                <li>Provide clear patterns for integrating built-in tools like Google Search.</li>
+                <li>Simplify deployment to Vertex AI and local development.</li>
+                <li>Establish consistent patterns for agent development.</li>
+                <li>Enable rapid prototyping and development of new agents.</li>
+            </ul>
+
+            <h3>1.2. Key Features</h3>
+            <ul>
+                <li><strong>True Custom Agent Architecture</strong>: Inherits directly from Google's <code>BaseAgent</code> class.</li>
+                <li><strong>LLM Integration</strong>: Uses Google's Gemini models.</li>
+                <li><strong>Tool Integration</strong>: Seamless integration with Google Search and custom tools.</li>
+                <li><strong>Flexible Orchestration</strong>: Supports complex orchestration patterns.</li>
+                <li><strong>Comprehensive Testing</strong>: Includes unit tests (Pytest).</li>
+                <li><strong>Interactive Mode</strong>: Supports interactive conversations via CLI.</li>
+                <li><strong>Deployment Options</strong>: Local (FastAPI) and Vertex AI.</li>
+                <li><strong>Configuration Driven</strong>: Uses <code>.env</code> files for configuration.</li>
+                <li><strong>Extensibility</strong>: Agent registry pattern for easy addition of new agent types.</li>
+            </ul>
+        </section>
+
+        <section id="architecture">
+            <h2>2. Architecture</h2>
+
+            <h3>2.1. Core Components Diagram</h3>
+            <p>This diagram shows the main functional components and their relationships as defined in <code>docs/PLANNING_1.md</code>.</p>
+            <div class="mermaid">
+graph TD
+    A["Base Agent"] --> B("Tool Integration")
+    A --> C("Session Management")
+    A --> D("Authentication")
+    A --> E("Deployment")
+    A --> F("LLM Agent - Gemini")
+
+    B --> B1["Google Search"]
+    B --> B3["Custom Tools"]
+
+    E --> E1["Local Development - FastAPI"]
+    E --> E2["Vertex AI Deployment"]
+
+    F --> B
+            </div>
+
+            <h3>2.2. Layered Architecture</h3>
+            <p>The starter kit follows a layered architecture promoting modularity and separation of concerns, as detailed in <code>docs/DOCUMENTATION_1.md</code>.</p>
+            <div class="mermaid">
+graph TD
+    Client["Client Layer (CLI, Web UI)"] --> AgentLayer["Agent Layer (BaseAgent, SearchAgent)"]
+    AgentLayer --> Orchestration["Orchestration Layer (_run_async_impl)"]
+    Orchestration --> ToolLayer["Tool Layer (Google Search, Custom Tools)"]
+    ToolLayer --> ModelLayer["Model Layer (Gemini via Google AI API)"]
+    AgentLayer --> SessionService["Session Service (InMemory)"]
+    AgentLayer --> Runner["Runner"]
+    Client --> Runner
+            </div>
+            <ul>
+                <li><strong>Client Layer</strong>: Interacts with the user (e.g., CLI, Web UI).</li>
+                <li><strong>Agent Layer</strong>: Contains the core agent logic (<code>BaseAgent</code>, specific agents like <code>SearchAgent</code>). Manages sub-agents, sessions, and runners.</li>
+                <li><strong>Orchestration Layer</strong>: Custom logic within the agent's <code>_run_async_impl</code> method, deciding how to use tools and models.</li>
+                <li><strong>Tool Layer</strong>: Provides specific capabilities (e.g., web search, custom functions).</li>
+                <li><strong>Model Layer</strong>: Interacts with the underlying Large Language Model (Gemini).</li>
+                <li><strong>Session Service</strong>: Manages conversation state.</li>
+                <li><strong>Runner</strong>: Handles the execution flow for a given session.</li>
+            </ul>
+        </section>
+
+        <section id="structure">
+            <h2>3. Project Structure</h2>
+            <p>The project follows a standard Python package structure:</p>
+            <div class="file-structure">
+google-adk-agent-starter-kit/
+├── .env                  # Environment variables (local, not committed)
+├── .env.example          # Example environment variables
+├── .gitignore            # Git ignore rules
+├── pytest.ini            # Pytest configuration
+├── README.md             # Project overview and setup guide
+├── requirements.txt      # Python dependencies
+├── run.py                # Main CLI entry point
+├── setup.py              # Package setup for distribution
+├── docs/                 # Documentation files
+│   ├── ACTION_ITEMS.md
+│   ├── CODE_REVIEW_REPORT_1.md
+│   ├── DOCUMENTATION_1.md  # Detailed project documentation
+│   ├── PLANNING_1.md       # Architecture and planning
+│   ├── PYDANTIC_USAGE.md   # Pydantic guidelines
+│   ├── TASKS_1.md          # Task tracking
+│   └── TEST_REPORT.md
+├── examples/             # Example agent usage scripts
+│   ├── __init__.py
+│   ├── multi_tool_agent.py
+│   ├── simple_search_agent.py
+│   └── streaming_agent.py
+├── src/                  # Source code directory
+│   ├── __init__.py
+│   ├── cli.py            # Command Line Interface implementation (using Typer/Click)
+│   ├── config.py         # Configuration loading (from .env)
+│   ├── registry.py       # Agent type registry
+│   ├── agents/           # Agent implementations
+│   │   ├── __init__.py
+│   │   ├── base_agent.py # Core base agent class
+│   │   └── search_agent.py # Example search agent
+│   ├── deployment/       # Deployment utilities
+│   │   ├── __init__.py
+│   │   ├── local.py      # Local FastAPI server deployment
+│   │   ├── vertex.py     # Vertex AI deployment helpers
+│   │   ├── static/       # Static files for local web UI
+│   │   │   ├── css/chat.css
+│   │   │   └── js/chat.js
+│   │   └── templates/    # HTML templates for local web UI
+│   │       └── index.html
+│   ├── tools/            # Tool implementations
+│   │   ├── __init__.py
+│   │   └── custom_tools.py # Custom tool creation utilities & examples
+│   └── utils/            # Utility modules
+│       ├── __init__.py
+│       ├── auth.py       # Authentication helpers (Placeholder/Basic)
+│       └── logging.py    # Logging setup
+└── tests/                # Unit and integration tests (Pytest)
+    ├── __init__.py
+    ├── test_custom_tools.py
+    ├── test_local.py
+    ├── test_registry.py
+    ├── test_search_agent.py
+    └── test_vertex.py
+            </div>
+        </section>
+
+        <section id="components">
+            <h2>4. Core Components</h2>
+
+            <div class="component">
+                <h3>4.1. BaseAgent (<code>src/agents/base_agent.py</code>)</h3>
+                <p>The foundation of the agent architecture, inheriting directly from Google's <code>ADKBaseAgent</code>.</p>
+                <ul>
+                    <li><strong>Inheritance</strong>: Extends <code>google.adk.agents.BaseAgent</code>.</li>
+                    <li><strong>Initialization (<code>__init__</code>)</strong>:
+                        <ul>
+                            <li>Takes name, model, description, instruction, tools, etc.</li>
+                            <li>Performs validation using internal methods (<code>_validate_model</code>, <code>_validate_tools</code>) following the hybrid Pydantic approach.</li>
+                            <li>Initializes the parent <code>ADKBaseAgent</code>.</li>
+                            <li>Creates and manages an internal <code>LlmAgent</code> (<code>self._llm_agent</code>) for reasoning, passing it the model, instruction, and tools.</li>
+                            <li>Sets up session management (default: <code>InMemorySessionService</code>).</li>
+                            <li>Creates a <code>Runner</code> instance for execution.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Orchestration (<code>_run_async_impl</code>)</strong>:
+                        <ul>
+                            <li>The core logic method required by <code>ADKBaseAgent</code>.</li>
+                            <li>Currently, it delegates execution directly to the internal <code>LlmAgent</code> (<code>self._llm_agent.run_async(ctx)</code>).</li>
+                            <li>This is the primary place to customize agent behavior, add conditional logic, or orchestrate multiple sub-agents or tools.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Pydantic Usage</strong>: Uses a hybrid approach. Sets <code>model_config = {"arbitrary_types_allowed": True}</code> and uses internal validation methods rather than Pydantic field definitions.</li>
+                    <li><strong>Helper Methods</strong>: Provides methods like <code>run</code>, <code>run_and_get_response</code>, <code>create_session</code>, <code>get_session</code> for easier interaction.</li>
+                </ul>
+                <pre><code># Simplified __init__ from src/agents/base_agent.py
+class BaseAgent(ADKBaseAgent):
+    model_config = {"arbitrary_types_allowed": True}
+
+    def __init__(self, name: str, model: str = DEFAULT_MODEL, ..., tools: Optional[List[Any]] = None, **kwargs):
+        # ... validation ...
+        super().__init__(name=name, ...)
+        
+        self._model = validated_model
+        self._instruction = instruction
+        self._tools = validated_tools
+        # ...
+        
+        self._llm_agent = LlmAgent(
+            name=f"{name}_llm",
+            model=self._model,
+            instruction=instruction,
+            tools=self._tools,
+        )
+        self.sub_agents.append(self._llm_agent)
+        # ... session service, runner ...
+
+    @override
+    async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:
+        logger.info(f"[{self.name}] Running LLM agent")
+        async for event in self._llm_agent.run_async(ctx):
+            yield event
+        logger.info(f"[{self.name}] Agent execution completed")
+</code></pre>
+            </div>
+
+            <div class="component">
+                <h3>4.2. SearchAgent (<code>src/agents/search_agent.py</code>)</h3>
+                <p>An example agent specializing in using Google Search.</p>
+                <ul>
+                    <li><strong>Inheritance</strong>: Extends <code>BaseAgent</code>.</li>
+                    <li><strong>Functionality</strong>: Designed to answer questions by searching the internet.</li>
+                    <li><strong>Initialization (<code>__init__</code>)</strong>:
+                        <ul>
+                            <li>Adds the built-in <code>google_search</code> tool from <code>google.adk.tools</code> to the list of tools.</li>
+                            <li>Allows passing <code>additional_tools</code>.</li>
+                            <li>Calls the parent <code>BaseAgent.__init__</code> with the combined tool list.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Orchestration (<code>_run_async_impl</code>)</strong>: Inherits the default behavior from <code>BaseAgent</code>, which delegates to the <code>LlmAgent</code>. The <code>LlmAgent</code> automatically uses the provided tools (including <code>google_search</code>) when appropriate based on the instruction and user query.</li>
+                    <li><strong>Convenience Method (<code>search</code>)</strong>: Provides a simple synchronous method to run a query and get the final text response.</li>
+                </ul>
+                <pre><code># Simplified __init__ from src/agents/search_agent.py
+from google.adk.tools import google_search
+
+class SearchAgent(BaseAgent):
+    def __init__(self, name: str = "search_agent", ..., additional_tools: Optional[List[Any]] = None):
+        tools = [google_search]
+        if additional_tools:
+            tools.extend(additional_tools)
+
+        super().__init__(
+            name=name,
+            # ...,
+            tools=tools,
+            # ...
+        )
+
+    # _run_async_impl is inherited from BaseAgent
+</code></pre>
+            </div>
+
+            <div class="component">
+                <h3>4.3. Tools (<code>src/tools/custom_tools.py</code>, <code>google.adk.tools</code>)</h3>
+                <p>Functions that agents can call to perform specific actions.</p>
+                <ul>
+                    <li><strong>Built-in Tools</strong>: The kit uses <code>google_search</code> from <code>google.adk.tools</code>.</li>
+                    <li><strong>Custom Tools</strong>:
+                        <ul>
+                            <li>Defined as standard Python functions with type hints and docstrings.</li>
+                            <li>The docstring is crucial as it tells the LLM what the tool does and how to use it.</li>
+                            <li><code>src/tools/custom_tools.py</code> provides helpers (<code>create_custom_tool</code>, <code>CustomToolBuilder</code>) to wrap these functions into <code>FunctionTool</code> objects compatible with the ADK.</li>
+                            <li>Example: <code>get_current_time</code> tool is defined and created.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Integration</strong>: Tools are passed to the <code>BaseAgent</code> (and subsequently the internal <code>LlmAgent</code>) during initialization. The <code>LlmAgent</code> decides when to call a tool based on the conversation and tool descriptions.</li>
+                </ul>
+                <pre><code># Example from src/tools/custom_tools.py
+from google.adk.tools import FunctionTool
+
+def get_current_time(timezone: str = "UTC") -> str:
+    """
+    Get the current time in a specific timezone.
+
+    Args:
+        timezone: The timezone to get the time for (default: UTC).
+
+    Returns:
+        The current time in the specified timezone.
+    """
+    # Placeholder implementation
+    return f"The current time in {timezone} is 12:00 PM."
+
+# Creating the tool
+current_time_tool = FunctionTool(get_current_time)
+
+# Using the helper
+# current_time_tool = create_custom_tool(get_current_time)
+</code></pre>
+            </div>
+
+            <div class="component">
+                <h3>4.4. Agent Registry (<code>src/registry.py</code>)</h3>
+                <p>A mechanism for registering and creating different types of agents dynamically.</p>
+                <ul>
+                    <li><strong>Purpose</strong>: Decouples agent creation from the code that uses agents (like the CLI). Allows adding new agent types without modifying the core CLI logic.</li>
+                    <li><strong>Functionality</strong>:
+                        <ul>
+                            <li><code>register_agent_type(type_name, factory_function)</code>: Adds an agent type and its creation function.</li>
+                            <li><code>get_agent_factory(type_name)</code>: Retrieves the factory function.</li>
+                            <li><code>create_agent(type_name, **kwargs)</code>: Creates an agent instance using its factory.</li>
+                            <li><code>list_agent_types()</code>: Returns available agent types.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Usage</strong>: The <code>SearchAgent</code> is registered by default. The CLI (<code>src/cli.py</code>) uses this registry to know which agents it can run.</li>
+                </ul>
+                <pre><code># Simplified usage from src/registry.py
+_agent_registry: Dict[str, AgentFactory] = {}
+
+def register_agent_type(agent_type: str, factory: AgentFactory) -> None:
+    _agent_registry[agent_type] = factory
+
+def create_agent(agent_type: str, **kwargs) -> Any:
+    factory = get_agent_factory(agent_type)
+    return factory(**kwargs)
+
+# Registering SearchAgent
+from .agents.search_agent import SearchAgent
+def _create_search_agent(**kwargs) -> SearchAgent:
+    return SearchAgent(**kwargs)
+register_agent_type("search", _create_search_agent)
+</code></pre>
+            </div>
+
+             <div class="component">
+                <h3>4.5. Configuration (<code>src/config.py</code>)</h3>
+                <p>Manages application settings using environment variables.</p>
+                <ul>
+                    <li><strong>Loading</strong>: Uses <code>python-dotenv</code> to load variables from a <code>.env</code> file.</li>
+                    <li><strong>Variables</strong>: Defines constants for settings like <code>GOOGLE_API_KEY</code>, <code>GOOGLE_CLOUD_PROJECT</code>, <code>DEFAULT_MODEL</code>, <code>LOG_LEVEL</code>, <code>WEB_UI_PORT</code>, etc.</li>
+                    <li><strong>Access</strong>: Provides a <code>get_config()</code> function to retrieve settings as a dictionary.</li>
+                    <li><strong>Validation</strong>: Includes a <code>validate_config()</code> function to check for required settings based on the mode (Vertex AI vs API Key).</li>
+                </ul>
+            </div>
+
+            <div class="component">
+                <h3>4.6. Deployment (<code>src/deployment/</code>)</h3>
+                <p>Handles running the agent locally or deploying to Vertex AI.</p>
+                <ul>
+                    <li><strong>Local (<code>local.py</code>)</strong>:
+                        <ul>
+                            <li>Uses FastAPI and Uvicorn to run a local web server.</li>
+                            <li>Provides a simple WebSocket-based chat interface (HTML/CSS/JS in <code>static/</code> and <code>templates/</code>).</li>
+                            <li>Handles multiple sessions.</li>
+                            <li>Manages port conflicts by trying subsequent ports if the default is busy.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Vertex AI (<code>vertex.py</code>)</strong>:
+                        <ul>
+                            <li>Contains helper functions (<code>prepare_deployment_package</code>, <code>deploy_to_vertex_ai</code>) to package the agent source code and deploy it as a Vertex AI Endpoint.</li>
+                            <li>Generates a <code>main.py</code> entry point for the Vertex AI container that uses the agent registry to instantiate the correct agent.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="component">
+                <h3>4.7. CLI (<code>run.py</code>, <code>src/cli.py</code>)</h3>
+                <p>Provides a command-line interface for interacting with the starter kit.</p>
+                <ul>
+                    <li><strong>Entry Point</strong>: <code>run.py</code> is the main script executed.</li>
+                    <li><strong>Implementation</strong>: <code>src/cli.py</code> likely uses a library like Typer or Click to define commands.</li>
+                    <li><strong>Commands</strong>:
+                        <ul>
+                            <li><code>run [AGENT_TYPE]</code>: Runs the specified agent (using the registry). Options like <code>--interactive</code> for chat or <code>--port</code> for local web UI.</li>
+                            <li><code>deploy [AGENT_TYPE]</code>: Deploys the specified agent to Vertex AI, taking project ID and region as arguments.</li>
+                            <li><code>list-agents</code>: Lists available agent types from the registry.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="connections">
+            <h2>5. Component Interactions</h2>
+            <p>The following describes the typical flow of execution:</p>
+            <ol>
+                <li><strong>User Interaction (CLI)</strong>: The user runs a command via <code>run.py</code>, e.g., <code>python run.py run search --interactive</code>.</li>
+                <li><strong>CLI Processing (<code>src/cli.py</code>)</strong>: The CLI parses the command. For `run`, it identifies the agent type ("search").</li>
+                <li><strong>Agent Creation (<code>src/registry.py</code>)</strong>: The CLI calls <code>registry.create_agent("search", ...)</code>. The registry finds the factory for "search" and executes it, creating a <code>SearchAgent</code> instance.</li>
+                <li><strong>Agent Initialization (<code>SearchAgent</code> -> <code>BaseAgent</code>)</strong>:
+                    <ul>
+                        <li><code>SearchAgent.__init__</code> adds <code>google_search</code> tool and calls <code>BaseAgent.__init__</code>.</li>
+                        <li><code>BaseAgent.__init__</code> validates inputs, creates the internal <code>LlmAgent</code> (passing tools), sets up the session service, and creates the <code>Runner</code>.</li>
+                    </ul>
+                </li>
+                <li><strong>Execution (Interactive Mode)</strong>:
+                    <ul>
+                        <li>The CLI starts an input loop.</li>
+                        <li>For each user message:
+                            <ul>
+                                <li>The message is passed to <code>agent.run_and_get_response(user_id, session_id, message)</code> or similar method involving the <code>Runner</code>.</li>
+                                <li>The <code>Runner</code> manages the session state and calls the agent's <code>_run_async_impl</code> method via the ADK framework.</li>
+                                <li><code>BaseAgent._run_async_impl</code> delegates to <code>self._llm_agent.run_async(ctx)</code>.</li>
+                                <li>The <code>LlmAgent</code> interacts with the Gemini model. Based on the instruction and query, it might decide to:
+                                    <ul>
+                                        <li>Generate a direct response.</li>
+                                        <li>Call a tool (e.g., <code>google_search</code>). If a tool is called, the <code>LlmAgent</code> receives the tool's output and continues reasoning to generate the final response.</li>
+                                    </ul>
+                                </li>
+                                <li>Events are yielded back through the layers.</li>
+                                <li>The CLI extracts and prints the final response text.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                 <li><strong>Execution (Local Web UI)</strong>:
+                    <ul>
+                        <li><code>src/deployment/local.py</code> starts a FastAPI server.</li>
+                        <li>The browser connects via WebSocket.</li>
+                        <li>Messages are sent over WebSocket, processed similarly to interactive mode using the agent and runner, and responses streamed back.</li>
+                    </ul>
+                </li>
+            </ol>
+
+            <h3>Interaction Diagram</h3>
+             <div class="mermaid">
+sequenceDiagram
+    participant User as "User"
+    participant CLI as "CLI (run.py / cli.py)"
+    participant Registry as "Registry (registry.py)"
+    participant Agent as "Agent (e.g., SearchAgent)"
+    participant BaseAgent as "BaseAgent (base_agent.py)"
+    participant LlmAgent as "LlmAgent (ADK)"
+    participant Tool as "Tool (e.g., google_search)"
+    participant GeminiAPI as "Gemini API"
+    participant Runner as "Runner (ADK)"
+    participant SessionService as "SessionService (ADK)"
+
+    User->>CLI: "python run.py run search --interactive"
+    CLI->>Registry: "create_agent('search', ...)"
+    Registry-->>CLI: "agent_instance (SearchAgent)"
+    Note over Agent, BaseAgent: "SearchAgent.__init__() calls BaseAgent.__init__()"
+    BaseAgent->>LlmAgent: "Creates LlmAgent(tools=[google_search])"
+    BaseAgent->>SessionService: "Creates InMemorySessionService()"
+    BaseAgent->>Runner: "Creates Runner(agent=self)"
+    CLI->>User: "Prompt for input"
+    User->>CLI: "What is the capital of France?"
+    CLI->>Runner: "run(user_id, session_id, message)"
+    Runner->>SessionService: "Get/Update Session State"
+    Runner->>Agent: "Calls _run_async_impl via ADK framework"
+    Agent->>BaseAgent: "Inherited _run_async_impl"
+    BaseAgent->>LlmAgent: "run_async(ctx)"
+    LlmAgent->>GeminiAPI: "Sends prompt + tools schema"
+    GeminiAPI-->>LlmAgent: "Suggests calling google_search('capital of France')"
+    LlmAgent->>Tool: "Executes google_search('capital of France')"
+    Tool-->>LlmAgent: "Returns 'Paris'"
+    LlmAgent->>GeminiAPI: "Sends tool result"
+    GeminiAPI-->>LlmAgent: "Final response 'The capital of France is Paris.'"
+    LlmAgent-->>BaseAgent: "Yields final response event"
+    BaseAgent-->>Agent: "Yields event"
+    Agent-->>Runner: "Yields event"
+    Runner-->>CLI: "Returns list of events"
+    CLI->>User: "Prints 'The capital of France is Paris.'"
+
+            </div>
+        </section>
+
+        <section id="dependencies">
+            <h2>6. Key Dependencies (from <code>requirements.txt</code>)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Package</th>
+                        <th>Version</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>google-adk</td><td>>=0.2.0</td><td>Core Google Agent Development Kit</td></tr>
+                    <tr><td>google-generativeai</td><td>>=0.3.0</td><td>Google Gemini API Client</td></tr>
+                    <tr><td>google-cloud-aiplatform</td><td>>=1.36.0</td><td>Google Vertex AI Client</td></tr>
+                    <tr><td>google-auth</td><td>>=2.22.0</td><td>Google Authentication</td></tr>
+                    <tr><td>fastapi</td><td>>=0.103.1</td><td>Web framework for local deployment UI</td></tr>
+                    <tr><td>uvicorn</td><td>>=0.23.2</td><td>ASGI server for FastAPI</td></tr>
+                    <tr><td>websockets</td><td>>=11.0.3</td><td>WebSocket support for local UI</td></tr>
+                    <tr><td>python-dotenv</td><td>>=1.0.0</td><td>Loading .env files</td></tr>
+                    <tr><td>pydantic</td><td>>=2.4.2</td><td>Data validation (used in hybrid approach)</td></tr>
+                    <tr><td>pytest</td><td>>=7.4.2</td><td>Testing framework</td></tr>
+                    <tr><td>black, isort, flake8, mypy</td><td>Various</td><td>Code formatting, linting, type checking</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="usage">
+            <h2>7. Basic Usage Examples</h2>
+
+            <h3>7.1. Interactive Mode (Search Agent)</h3>
+            <pre><code>python run.py run search --interactive</code></pre>
+
+            <h3>7.2. Programmatic Use (Search Agent)</h3>
+            <pre><code>from src.agents.search_agent import SearchAgent
+
+# Create a search agent
+agent = SearchAgent(
+    name="my_search_agent",
+    description="My custom search agent",
+    instruction="Answer questions using Google Search",
+)
+
+# Search for information
+response = agent.search("What is the capital of France?")
+print(response)
+# Output: The capital of France is Paris. (or similar)</code></pre>
+
+            <h3>7.3. Creating a Custom Agent</h3>
+             <pre><code>from src.agents.base_agent import BaseAgent
+from typing import AsyncGenerator
+from typing_extensions import override
+from google.adk.agents.invocation_context import InvocationContext
+from google.adk.events import Event
+# Import your custom tool if needed
+# from src.tools.custom_tools import my_custom_tool
+
+class MyCustomAgent(BaseAgent):
+    def __init__(self, name: str = "my_custom_agent", ...):
+        # Add custom tools here if needed
+        # tools = [my_custom_tool]
+        super().__init__(name=name, tools=tools, ...) # Pass tools
+
+    @override
+    async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:
+        # Implement custom orchestration logic here
+        # Example: Check state, call specific tools, modify prompts...
+        print(f"Custom logic running for: {ctx.session.state.get('user_message')}")
+
+        # Default: delegate to LLM agent
+        async for event in self._llm_agent.run_async(ctx):
+            yield event
+
+# Remember to register this agent in src/registry.py to use it via CLI
+# registry.register_agent_type("custom", lambda **kwargs: MyCustomAgent(**kwargs))
+# Then run: python run.py run custom --interactive
+</code></pre>
+        </section>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+</body>
+</html>

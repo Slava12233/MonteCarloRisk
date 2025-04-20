@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ agent_name }} - Chat Interface</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/chat.css">
+</head>
+<body>
+    <h1>{{ agent_name }} - Chat Interface</h1>
+    <div id="chat-container"></div>
+    <form id="message-form">
+        <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off">
+        <button type="submit">Send</button>
+    </form>
+
+    <script src="/static/js/chat.js"></script>
+</body>
+</html>

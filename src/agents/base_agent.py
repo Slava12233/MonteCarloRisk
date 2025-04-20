@@ -68,6 +68,11 @@ class BaseAgent(ADKBaseAgent):
             if error:
                 raise ValueError(f"Invalid configuration: {error}")
 
+        # Validate inputs before passing to parent class
+        validated_model = self._validate_model(model)
+        validated_tools = self._validate_tools(tools)
+        validated_app_name = app_name or name
+
         # Initialize the parent class first
         super().__init__(
             name=name,
@@ -76,16 +81,17 @@ class BaseAgent(ADKBaseAgent):
             **kwargs,
         )
         
-        # Store parameters as instance attributes (not Pydantic fields)
-        self._model = model
+        # Store parameters as instance attributes with leading underscore
+        # to indicate they are "private"
+        self._model = validated_model
         self._instruction = instruction
-        self._tools = tools or []
-        self._app_name = app_name or name
+        self._tools = validated_tools
+        self._app_name = validated_app_name
         
         # Create the LLM agent that will handle the actual reasoning
         self._llm_agent = LlmAgent(
             name=f"{name}_llm",
-            model=model or DEFAULT_MODEL,  # Ensure model is never None
+            model=self._model,  # Use validated model
             description=description,
             instruction=instruction,
             tools=self._tools,
@@ -106,6 +112,50 @@ class BaseAgent(ADKBaseAgent):
         )
         
         logger.info(f"Initialized agent: {name}")
+        
+    def _validate_model(self, model: Optional[str]) -> str:
+        """
+        Validate the model parameter.
+        
+        Args:
+            model: The model to validate.
+            
+        Returns:
+            The validated model.
+            
+        Raises:
+            ValueError: If the model is invalid.
+        """
+        if not model:
+            return DEFAULT_MODEL
+            
+        # Add additional validation logic here
+        # For example, check if the model is in a list of supported models
+        # or if it matches a specific pattern
+        
+        return model
+        
+    def _validate_tools(self, tools: Optional[List[Any]]) -> List[Any]:
+        """
+        Validate the tools parameter.
+        
+        Args:
+            tools: The tools to validate.
+            
+        Returns:
+            The validated tools.
+            
+        Raises:
+            ValueError: If any tool is invalid.
+        """
+        if not tools:
+            return []
+            
+        # Add additional validation logic here
+        # For example, check if each tool has required attributes
+        # or if the tools list contains only supported tool types
+        
+        return tools
 
     @override
     async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:

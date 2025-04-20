@@ -60,6 +60,7 @@ adk-python-main/
 *.bak
 *.swp
 *~
+commands.txt
 
 # Jupyter Notebook
 .ipynb_checkpoints

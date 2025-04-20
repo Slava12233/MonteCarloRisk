@@ -10,8 +10,9 @@ import argparse
 import logging
 from typing import Optional, List, Dict, Any
 
-from .agents.search_agent import SearchAgent
+from .registry import create_agent, list_agent_types
 from .deployment.local import run_locally
+from .deployment.vertex import deploy_to_vertex
 from .utils.logging import configure_logging, get_logger
 from .config import print_config
 
@@ -20,41 +21,7 @@ configure_logging()
 logger = get_logger(__name__)
 
 
-def create_agent(
-    agent_type: str,
-    name: Optional[str] = None,
-    model: Optional[str] = None,
-    description: Optional[str] = None,
-    instruction: Optional[str] = None,
-) -> Any:
-    """
-    Create an agent of the specified type.
-
-    Args:
-        agent_type: The type of agent to create (e.g., "search").
-        name: The name of the agent (default: None).
-        model: The model to use (default: None).
-        description: A description of the agent (default: None).
-        instruction: Instructions for the agent (default: None).
-
-    Returns:
-        The created agent.
-
-    Raises:
-        ValueError: If the agent type is not supported.
-    """
-    if agent_type == "search":
-        # Create a search agent
-        agent = SearchAgent(
-            name=name or "search_agent",
-            model=model,
-            description=description or "A search agent that can answer questions using Google Search.",
-            instruction=instruction or "I can answer your questions by searching the internet. Just ask me anything!",
-        )
-    else:
-        raise ValueError(f"Unsupported agent type: {agent_type}")
-    
-    return agent
+# Note: We're using the create_agent function from the registry module
 
 
 def run_agent(
@@ -69,6 +36,7 @@ def run_agent(
     model: Optional[str] = None,
     description: Optional[str] = None,
     instruction: Optional[str] = None,
+    **kwargs
 ) -> None:
     """
     Run an agent.
@@ -128,10 +96,16 @@ def run_agent(
                 break
             
             # Run the agent
-            if agent_type == "search":
-                response = agent.search(query, session_id=session_id)
-            else:
-                response = "Unsupported agent type"
+            try:
+                # Try to use the search method if available
+                if hasattr(agent, 'search'):
+                    response = agent.search(query, session_id=session_id)
+                else:
+                    # Fall back to run_and_get_response
+                    response = agent.run_and_get_response(user_id="user", session_id=session_id, message=query)
+            except Exception as e:
+                logger.error(f"Error running agent: {e}")
+                response = f"Error: {str(e)}"
             
             # Print the response
             print(f"\nAgent: {response}")
@@ -140,10 +114,16 @@ def run_agent(
         logger.info(f"Running agent with query: {query}")
         
         # Run the agent
-        if agent_type == "search":
-            response = agent.search(query)
-        else:
-            response = "Unsupported agent type"
+        try:
+            # Try to use the search method if available
+            if hasattr(agent, 'search'):
+                response = agent.search(query)
+            else:
+                # Fall back to run_and_get_response
+                response = agent.run_and_get_response(user_id="user", session_id="session", message=query)
+        except Exception as e:
+            logger.error(f"Error running agent: {e}")
+            response = f"Error: {str(e)}"
         
         # Print the response
         print(f"\nQuery: {query}")
@@ -164,7 +144,7 @@ def main():
     
     # Add the run command
     run_parser = subparsers.add_parser("run", help="Run an agent")
-    run_parser.add_argument("agent_type", choices=["search"], help="Type of agent to run")
+    run_parser.add_argument("agent_type", choices=list_agent_types(), help="Type of agent to run")
     run_parser.add_argument("--query", help="Query to send to the agent")
     run_parser.add_argument("--interactive", action="store_true", help="Run in interactive mode")
     run_parser.add_argument("--web", action="store_true", help="Run with a web interface")

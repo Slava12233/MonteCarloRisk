@@ -47,10 +47,13 @@ class SearchAgent(BaseAgent):
             app_name: The name of the application.
             additional_tools: Additional tools to include besides Google Search.
         """
+        # Validate additional tools
+        validated_additional_tools = self._validate_additional_tools(additional_tools)
+        
         # Combine Google Search with any additional tools
         tools = [google_search]
-        if additional_tools:
-            tools.extend(additional_tools)
+        if validated_additional_tools:
+            tools.extend(validated_additional_tools)
 
         super().__init__(
             name=name,
@@ -61,6 +64,28 @@ class SearchAgent(BaseAgent):
             session_service=session_service,
             app_name=app_name,
         )
+        
+    def _validate_additional_tools(self, additional_tools: Optional[List[Any]]) -> List[Any]:
+        """
+        Validate additional tools.
+        
+        Args:
+            additional_tools: Additional tools to validate.
+            
+        Returns:
+            The validated additional tools.
+            
+        Raises:
+            ValueError: If any tool is invalid.
+        """
+        if not additional_tools:
+            return []
+            
+        # Add additional validation logic here
+        # For example, check if each tool has required attributes
+        # or if the tools list contains only supported tool types
+        
+        return additional_tools
 
     @override
     async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:

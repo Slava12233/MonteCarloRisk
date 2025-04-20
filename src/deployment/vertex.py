@@ -58,46 +58,57 @@ def prepare_deployment_package(
     deploy_dir = os.path.join(output_dir, "deploy")
     os.makedirs(deploy_dir, exist_ok=True)
     
+    # Copy the src directory to the deployment package
+    src_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src")
+    deploy_src_dir = os.path.join(deploy_dir, "src")
+    shutil.copytree(src_dir, deploy_src_dir)
+    
     # Create main.py for the deployment
     with open(os.path.join(deploy_dir, "main.py"), "w") as f:
         f.write(f"""
 import os
+import sys
 import json
 import logging
 from typing import Dict, Any
 
+# Add the current directory to the path so we can import our modules
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from google.cloud import aiplatform
-from google.adk.agents import Agent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
+# Import our custom agent
+from src.agents.search_agent import SearchAgent
+from src.utils.logging import configure_logging, get_logger
+
 # Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+configure_logging()
+logger = get_logger(__name__)
 
 # Initialize agent
 def init():
     global agent, runner, session_service
     
-    # Create agent
-    agent = Agent(
+    # Create our custom SearchAgent
+    agent = SearchAgent(
         name="{agent.name}",
         model="{agent.model}",
         description="{agent.description}",
         instruction="{agent.instruction}",
-        tools={json.dumps([t.__class__.__name__ for t in agent.tools]) if hasattr(agent, 'tools') and agent.tools else '[]'}
     )
     
     # Set up session management
     session_service = InMemorySessionService()
     runner = Runner(
         agent=agent,
-        app_name="{agent.app_name}",
+        app_name="{agent.name}",
         session_service=session_service
     )
     
-    logger.info("Agent initialized")
+    logger.info("Custom SearchAgent initialized")
 
 # Handle prediction requests
 def predict(request: Dict[str, Any]) -> Dict[str, Any]:
