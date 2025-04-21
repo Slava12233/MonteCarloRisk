@@ -128,4 +128,18 @@ def test_list_agent_types(clear_registry, mock_agent_factory):
     assert "test2" in agent_types
     assert len(agent_types) == 2
 
+
+def test_create_base_agent_with_defaults():
+    """Test creating a base agent with default parameters."""
+    from src.registry import _create_base_agent
+    
+    # Create a base agent with default parameters
+    agent = _create_base_agent()
+    
+    # Check that the agent has the expected default values
+    assert agent.name == "base_agent"
+    assert agent.description == "A generic base agent."
+    assert hasattr(agent, "_tools")
+    assert len(agent._tools) >= 1  # Should have at least the google_search tool
+
 # Removed test_built_in_search_agent as SearchAgent was removed

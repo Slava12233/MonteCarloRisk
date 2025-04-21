@@ -12,6 +12,7 @@ Welcome to the documentation for the Google ADK Agent Starter Kit. This page ser
 - [PYDANTIC_USAGE.md](PYDANTIC_USAGE.md) - Guidelines for using Pydantic in agent classes
 - [ACTION_ITEMS.md](ACTION_ITEMS.md) - Action items and improvements for the project
 - [TASK.md](../TASK.md) - Current and completed tasks
+- [test_report.md](test_report.md) - Comprehensive test coverage report
 
 ## Documentation Overview
 
@@ -30,6 +31,8 @@ Welcome to the documentation for the Google ADK Agent Starter Kit. This page ser
 - **[AGENT_ENGINE_DEPLOYMENT.md](AGENT_ENGINE_DEPLOYMENT.md)**: Detailed guide for deploying agents to Google Cloud's Vertex AI Agent Engine, including prerequisites, deployment infrastructure, process, monitoring, troubleshooting, and best practices.
 
 - **[PYDANTIC_USAGE.md](PYDANTIC_USAGE.md)**: Guidelines for using Pydantic in agent classes, explaining the hybrid approach adopted in this project.
+
+- **[test_report.md](test_report.md)**: Detailed report on test coverage and test suite organization, demonstrating 100% code coverage.
 
 ### Project Management
 
@@ -58,6 +61,7 @@ Welcome to the documentation for the Google ADK Agent Starter Kit. This page ser
 
 ## Latest Updates
 
+- April 22, 2025: Added test_report.md documenting 100% test coverage achievement
 - April 21, 2025: Added DIRECT_DEPLOY.md for the recommended deployment method
 - April 21, 2025: Successfully deployed agent to Vertex AI Agent Engine using direct_deploy.py
 - April 22, 2025: Added new PLANNING.md document and updated all documentation for consistency

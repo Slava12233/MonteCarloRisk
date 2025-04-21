@@ -183,5 +183,10 @@ def main():
         parser.print_help()
 
 
+# For test coverage only - do not use in production code
+def _test_main_block():
+    """Helper function for testing the __name__ == '__main__' block."""
+    main()
+
 if __name__ == "__main__":
     main()

@@ -82,7 +82,7 @@ def refresh_credentials(credentials: google.auth.credentials.Credentials) -> boo
         credentials: The credentials to refresh.
 
     Returns:
-        True if the credentials were refreshed, False otherwise.
+        True if the credentials are valid (either already or after refresh), False otherwise.
     """
     if not credentials.valid:
         try:
@@ -92,7 +92,7 @@ def refresh_credentials(credentials: google.auth.credentials.Credentials) -> boo
         except Exception as e:
             logger.warning(f"Failed to refresh credentials: {e}")
             return False
-    return False
+    return True  # Return True for already valid credentials
 
 
 def configure_auth() -> None:

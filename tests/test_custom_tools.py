@@ -129,3 +129,20 @@ def test_builder_missing_handler():
     # Check that building without a handler raises an error
     with pytest.raises(ValueError):
         builder.build()
+
+
+def test_example_current_time_tool():
+    """Test the example current_time_tool that's defined in the module."""
+    from src.tools.custom_tools import current_time_tool, get_current_time
+    
+    # Verify the tool is correctly created
+    assert current_time_tool.name == "get_current_time"
+    assert hasattr(current_time_tool, "func")
+    
+    # Test the tool execution with parameter
+    result = current_time_tool.func("Europe/London")
+    assert "The current time in Europe/London is" in result
+    
+    # Test with default parameter
+    result = current_time_tool.func()
+    assert "The current time in UTC is" in result
