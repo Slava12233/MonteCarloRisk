@@ -206,7 +206,16 @@ For local development and testing with a web interface:
 # Ensure GOOGLE_API_KEY or DEV_MODE=TRUE is set in your environment/.env
 python run.py run base --web --port 8000
 ```
-Access the interface at `http://localhost:8000`. *(Note: If the page shows ERR_EMPTY_RESPONSE despite the server starting, check browser developer console for errors).*
+Access the interface at `http://localhost:8000`. 
+
+**Key Web UI Features:**
+- Chat-like interface with message history
+- Real-time streaming responses 
+- Session management (create new sessions or view history of past sessions)
+- Accessing session history via `/api/sessions/{user_id}` and `/api/sessions/{user_id}/{session_id}/history` endpoints
+- WebSocket-based streaming for responsive experience
+
+If the page shows ERR_EMPTY_RESPONSE despite the server starting, check browser developer console for errors and ensure ports are not blocked by firewall.
 
 #### Vertex AI Agent Engine Deployment
 
@@ -270,11 +279,13 @@ python chat.py
 For more detailed documentation, see:
 
 - [Documentation Index](docs/index.md) - Central index of all documentation resources.
+- [User Guide](docs/USER_GUIDE.md) - Comprehensive guide comparing local development vs. deployment options.
 - [Direct Deployment Guide](docs/DIRECT_DEPLOY.md) - Guide for the recommended deployment method.
 - [Agent Engine Deployment Guide](docs/AGENT_ENGINE_DEPLOYMENT.md) - Comprehensive guide for Vertex AI Agent Engine deployment.
 - [Planning Document](docs/PLANNING.md) - Project architecture and design decisions.
 - [Task List](TASK.md) - Current and completed tasks.
 - [Pydantic Usage Guidelines](docs/PYDANTIC_USAGE.md) - Guidelines for using Pydantic in agent classes.
+- [Test Report](docs/test_report.md) - Comprehensive test coverage report with 100% coverage.
 - [Google ADK Documentation](https://cloud.google.com/vertex-ai/docs/agent-development-kit/overview) - Official ADK documentation.
 - [Action Items](docs/ACTION_ITEMS.md) - Action items and improvements for the project.
 *(Other files in `docs/` may contain historical or specific reports)*
