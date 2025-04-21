@@ -119,7 +119,7 @@
                 <li><strong>Flexible Orchestration</strong>: Supports complex orchestration patterns.</li>
                 <li><strong>Comprehensive Testing</strong>: Includes unit tests (Pytest).</li>
                 <li><strong>Interactive Mode</strong>: Supports interactive conversations via CLI.</li>
-                <li><strong>Deployment Options</strong>: Local (FastAPI) and Vertex AI.</li>
+                <li><strong>Deployment Options</strong>: Local (FastAPI), Vertex AI Endpoint, and Vertex AI Agent Engine.</li>
                 <li><strong>Configuration Driven</strong>: Uses <code>.env</code> files for configuration.</li>
                 <li><strong>Extensibility</strong>: Agent registry pattern for easy addition of new agent types.</li>
             </ul>
@@ -142,7 +142,8 @@ graph TD
     B --> B3["Custom Tools"]
 
     E --> E1["Local Development - FastAPI"]
-    E --> E2["Vertex AI Deployment"]
+    E --> E2["Vertex AI Endpoint Deployment"]
+    E --> E3["Vertex AI Agent Engine Deployment"]
 
     F --> B
             </div>
@@ -421,10 +422,18 @@ register_agent_type("search", _create_search_agent)
                             <li>Manages port conflicts by trying subsequent ports if the default is busy.</li>
                         </ul>
                     </li>
-                    <li><strong>Vertex AI (<code>vertex.py</code>)</strong>:
+                    <li><strong>Vertex AI Endpoint (<code>vertex.py</code>)</strong>:
                         <ul>
                             <li>Contains helper functions (<code>prepare_deployment_package</code>, <code>deploy_to_vertex_ai</code>) to package the agent source code and deploy it as a Vertex AI Endpoint.</li>
                             <li>Generates a <code>main.py</code> entry point for the Vertex AI container that uses the agent registry to instantiate the correct agent.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Vertex AI Agent Engine (<code>deploy_agent_engine.py</code>)</strong>:
+                        <ul>
+                            <li>Provides a deployment script for deploying agents to Vertex AI Agent Engine.</li>
+                            <li>Uses the Agent Engine API to deploy the agent as a fully managed service.</li>
+                            <li>Supports environment-specific configurations for different deployment environments.</li>
+                            <li>Includes local and remote testing capabilities.</li>
                         </ul>
                     </li>
                 </ul>

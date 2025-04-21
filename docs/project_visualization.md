@@ -20,7 +20,7 @@ The Google ADK Agent Starter Kit provides a standardized foundation for building
 *   **Flexible Orchestration**: Supports complex orchestration patterns.
 *   **Comprehensive Testing**: Includes unit tests (Pytest).
 *   **Interactive Mode**: Supports interactive conversations via CLI.
-*   **Deployment Options**: Local (FastAPI) and Vertex AI.
+*   **Deployment Options**: Local (FastAPI), Vertex AI Endpoint, and Vertex AI Agent Engine.
 *   **Configuration Driven**: Uses `.env` files for configuration.
 *   **Extensibility**: Agent registry pattern for easy addition of new agent types.
 
@@ -44,7 +44,8 @@ graph TD
     B --> B3["Custom Tools"]
 
     E --> E1["Local Development - FastAPI"]
-    E --> E2["Vertex AI Deployment"]
+    E --> E2["Vertex AI Endpoint Deployment"]
+    E --> E3["Vertex AI Agent Engine Deployment"]
 
     F --> B
 ```
@@ -306,9 +307,14 @@ Handles running the agent locally or deploying to Vertex AI.
     *   Provides a simple WebSocket-based chat interface (HTML/CSS/JS in `static/` and `templates/`).
     *   Handles multiple sessions.
     *   Manages port conflicts by trying subsequent ports if the default is busy.
-*   **Vertex AI (`vertex.py`)**:
+*   **Vertex AI Endpoint (`vertex.py`)**:
     *   Contains helper functions (`prepare_deployment_package`, `deploy_to_vertex_ai`) to package the agent source code and deploy it as a Vertex AI Endpoint.
     *   Generates a `main.py` entry point for the Vertex AI container that uses the agent registry to instantiate the correct agent.
+*   **Vertex AI Agent Engine (`deploy_agent_engine.py`)**:
+    *   Provides a deployment script for deploying agents to Vertex AI Agent Engine.
+    *   Uses the Agent Engine API to deploy the agent as a fully managed service.
+    *   Supports environment-specific configurations for different deployment environments.
+    *   Includes local and remote testing capabilities.
 
 ### 4.7. CLI (`run.py`, `src/cli.py`)
 

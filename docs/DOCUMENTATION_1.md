@@ -510,7 +510,11 @@ python run.py run search --interactive
 
 ### Vertex AI Deployment
 
-For production deployment, you can deploy the agent to Vertex AI:
+For production deployment, you can deploy the agent to Vertex AI using one of two approaches:
+
+#### Option 1: Vertex AI Endpoint Deployment
+
+This option deploys the agent as a Vertex AI endpoint using the traditional approach:
 
 1. Set up your Google Cloud project:
    ```bash
@@ -524,8 +528,34 @@ For production deployment, you can deploy the agent to Vertex AI:
 
 3. Deploy the agent:
    ```bash
-   python run.py deploy search --project your-project-id --region us-central1
+   python deploy.py --vertex --environment production
    ```
+
+#### Option 2: Vertex AI Agent Engine Deployment (Recommended)
+
+This option deploys the agent to Vertex AI Agent Engine, which is a fully managed service specifically designed for AI agents:
+
+1. Set up your Google Cloud project:
+   ```bash
+   gcloud config set project your-project-id
+   ```
+
+2. Enable the required APIs:
+   ```bash
+   gcloud services enable aiplatform.googleapis.com
+   ```
+
+3. Install the required dependencies:
+   ```bash
+   pip install 'google-cloud-aiplatform[adk,agent_engines]'
+   ```
+
+4. Deploy the agent:
+   ```bash
+   python deploy_agent_engine.py --environment production --staging-bucket gs://your-bucket-name
+   ```
+
+For detailed instructions on deploying to Agent Engine, see the [Agent Engine Deployment Guide](AGENT_ENGINE_DEPLOYMENT.md).
 
 ## Best Practices
 
