@@ -162,7 +162,11 @@ This will:
 
 ### Vertex AI Deployment
 
-Vertex AI deployment deploys the agent to Google Cloud's Vertex AI platform.
+There are two options for deploying to Vertex AI:
+
+#### Option 1: Vertex AI Endpoint Deployment
+
+This option deploys the agent as a Vertex AI endpoint using the traditional approach.
 
 ```bash
 python deploy.py --vertex
@@ -173,6 +177,31 @@ This will:
 2. Upload the package to Vertex AI
 3. Deploy the agent as a Vertex AI endpoint
 4. Configure the endpoint with the specified settings
+
+#### Option 2: Vertex AI Agent Engine Deployment (Recommended)
+
+This option deploys the agent to Vertex AI Agent Engine, which is a fully managed service specifically designed for AI agents.
+
+```bash
+python deploy_agent_engine.py --environment development --staging-bucket gs://your-bucket-name
+```
+
+This will:
+1. Create an agent with the specified configuration
+2. Test the agent locally
+3. Deploy the agent to Vertex AI Agent Engine
+4. Create a test session to verify the deployment
+
+Agent Engine provides several advantages over traditional Vertex AI endpoints:
+- Built-in session management
+- Automatic scaling
+- Improved monitoring and tracing
+- Optimized for agent workloads
+
+To use Agent Engine deployment, you need to:
+1. Install the required dependencies: `pip install 'google-cloud-aiplatform[adk,agent_engines]'`
+2. Create a Google Cloud Storage bucket for staging
+3. Ensure your service account has the necessary permissions (Vertex AI User role)
 
 ## Continuous Integration/Continuous Deployment (CI/CD)
 

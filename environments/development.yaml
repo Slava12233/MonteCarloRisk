@@ -5,7 +5,7 @@ environment: development
 
 # Vertex AI Deployment Settings
 vertex_ai:
-  project_id: your-dev-project-id
+  project_id: risk-manager-457219
   region: us-central1
   machine_type: n1-standard-1
   min_replica_count: 1

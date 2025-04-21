@@ -155,34 +155,63 @@ def deploy_to_vertex_ai(config: Dict[str, Any]) -> int:
     """
     logger.info("Starting deployment to Vertex AI")
     
-    # Get Vertex AI configuration
-    vertex_ai_config = config.get("vertex_ai", {})
-    project_id = vertex_ai_config.get("project_id")
-    region = vertex_ai_config.get("region")
+    try:
+        # Import the necessary modules
+        from src.agents.search_agent import SearchAgent
+        from src.deployment.vertex import deploy_to_vertex
+        
+        # Get Vertex AI configuration
+        vertex_ai_config = config.get("vertex_ai", {})
+        project_id = vertex_ai_config.get("project_id")
+        region = vertex_ai_config.get("region")
+        machine_type = vertex_ai_config.get("machine_type", "n1-standard-2")
+        min_replica_count = vertex_ai_config.get("min_replica_count", 1)
+        max_replica_count = vertex_ai_config.get("max_replica_count", 1)
+        
+        if not project_id or project_id == "your-project-id":
+            logger.error("Project ID not configured. Please set vertex_ai.project_id in deployment_config.yaml")
+            return 1
+        
+        # Get agent configuration
+        agent_config = config.get("agent", {})
+        agent_type = agent_config.get("type", "search")
+        model = agent_config.get("model", "gemini-2.0-flash")
+        description = agent_config.get("description", "Agent to answer questions using Google Search.")
+        instruction = agent_config.get("instruction", "I can answer your questions by searching the internet. Just ask me anything!")
+        
+        # Create the agent
+        logger.info(f"Creating {agent_type} agent with model {model}")
+        agent = SearchAgent(
+            name=f"{agent_type}_agent",  # Use underscore instead of hyphen
+            model=model,
+            description=description,
+            instruction=instruction,
+        )
+        
+        # Deploy the agent to Vertex AI
+        logger.info(f"Deploying agent to Vertex AI in project {project_id}, region {region}")
+        endpoint_id = deploy_to_vertex(
+            agent=agent,
+            project_id=project_id,
+            location=region,
+            machine_type=machine_type,
+            min_replica_count=min_replica_count,
+            max_replica_count=max_replica_count,
+            deployment_name=f"{agent_type}-endpoint",
+            output_dir="deploy",
+        )
+        
+        logger.info(f"Agent deployed successfully to endpoint: {endpoint_id}")
+        return 0
     
-    if not project_id or project_id == "your-project-id":
-        logger.error("Project ID not configured. Please set vertex_ai.project_id in deployment_config.yaml")
+    except ImportError as e:
+        logger.error(f"Failed to import required modules: {e}")
+        logger.error("Make sure google-cloud-aiplatform is installed: pip install google-cloud-aiplatform")
         return 1
     
-    # Get agent configuration
-    agent_config = config.get("agent", {})
-    agent_type = agent_config.get("type", "search")
-    
-    # Build the deployment command
-    command = f"python run.py deploy {agent_type} --project {project_id} --region {region}"
-    
-    # Add optional parameters
-    if "machine_type" in vertex_ai_config:
-        command += f" --machine-type {vertex_ai_config['machine_type']}"
-    
-    if "min_replica_count" in vertex_ai_config:
-        command += f" --min-replicas {vertex_ai_config['min_replica_count']}"
-    
-    if "max_replica_count" in vertex_ai_config:
-        command += f" --max-replicas {vertex_ai_config['max_replica_count']}"
-    
-    # Run the command
-    return run_command(command)
+    except Exception as e:
+        logger.error(f"Failed to deploy agent to Vertex AI: {e}")
+        return 1
 
 def deploy_locally(config: Dict[str, Any]) -> int:
     """
