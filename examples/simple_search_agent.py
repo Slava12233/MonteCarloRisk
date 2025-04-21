@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 # Load environment variables from .env file
 load_dotenv()
 
-from src.agents.search_agent import SearchAgent
+from src.agents.base_agent import BaseAgent # Changed import
 from src.utils.logging import configure_logging
 
 # Configure logging
@@ -25,13 +25,14 @@ logger = logging.getLogger(__name__)
 
 def main():
     """Run the simple search agent example."""
-    logger.info("Starting Simple Search Agent Example")
+    logger.info("Starting Simple Base Agent Example (with Search Tool)")
 
-    # Create a search agent
-    agent = SearchAgent(
-        name="simple_search_agent",
+    # Create a base agent (it now includes the search tool via registry modification)
+    agent = BaseAgent(
+        name="simple_base_agent_with_search",
         description="A simple agent that can search the web to answer questions.",
         instruction="I can answer your questions by searching the internet. Just ask me anything!",
+        # Tools are added via the registry factory for 'base'
     )
 
     logger.info(f"Created agent: {agent.name}")
@@ -48,8 +49,8 @@ def main():
     for query in example_queries:
         logger.info(f"Query: {query}")
         
-        # Run the agent
-        response = agent.search(query)
+        # Run the agent and get the final response
+        response = agent.run_and_get_response(user_id="example_user", session_id="example_session", message=query)
         
         # Print the response
         print(f"\nQuery: {query}")
@@ -61,11 +62,12 @@ def interactive_mode():
     """Run the agent in interactive mode."""
     logger.info("Starting Interactive Mode")
 
-    # Create a search agent
-    agent = SearchAgent(
-        name="interactive_search_agent",
+    # Create a base agent (it now includes the search tool via registry modification)
+    agent = BaseAgent(
+        name="interactive_base_agent_with_search",
         description="A simple agent that can search the web to answer questions.",
         instruction="I can answer your questions by searching the internet. Just ask me anything!",
+        # Tools are added via the registry factory for 'base'
     )
 
     logger.info(f"Created agent: {agent.name}")
@@ -88,8 +90,8 @@ def interactive_mode():
             print("Goodbye!")
             break
         
-        # Run the agent
-        response = agent.search(query, session_id=session_id)
+        # Run the agent and get the final response
+        response = agent.run_and_get_response(user_id="interactive_user", session_id=session_id, message=query)
         
         # Print the response
         print(f"\nAgent: {response}")

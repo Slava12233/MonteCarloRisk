@@ -1,0 +1,249 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Pydantic Usage Guidelines - MonteCarloRisk_AI</title>
+        <link rel="stylesheet" href="style.css">
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                mermaid.initialize({
+                    startOnLoad: true,
+                    theme: 'default',
+                    securityLevel: 'loose',
+                    flowchart: { useMaxWidth: false }
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div class="navbar">
+            <h1>MonteCarloRisk_AI</h1>
+            <p><a href="index.html" style="color: white;">← Back to Documentation Index</a></p>
+        </div>
+        
+        <h1 id="pydantic-usage-guidelines">Pydantic Usage Guidelines</h1>
+<h2 id="current-state-analysis">Current State Analysis</h2>
+<p>After reviewing the codebase, we've identified inconsistent usage of Pydantic in our agent classes. This document outlines the current state and proposes a standardized approach for future development.</p>
+<h3 id="current-implementation">Current Implementation</h3>
+<h4 id="baseagent-class">BaseAgent Class</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseAgent</span><span class="p">(</span><span class="n">ADKBaseAgent</span><span class="p">):</span>
+    <span class="c1"># Define model_config for Pydantic</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;arbitrary_types_allowed&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+
+    <span class="c1"># These are instance attributes, not Pydantic fields</span>
+    <span class="c1"># They will be set in __init__ but not validated by Pydantic</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_MODEL</span><span class="p">,</span>
+        <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">instruction</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">tools</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sub_agents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">session_service</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">app_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="c1"># Initialize the parent class first</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span>
+            <span class="n">sub_agents</span><span class="o">=</span><span class="n">sub_agents</span> <span class="ow">or</span> <span class="p">[],</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Store parameters as instance attributes (not Pydantic fields)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instruction</span> <span class="o">=</span> <span class="n">instruction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tools</span> <span class="o">=</span> <span class="n">tools</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_app_name</span> <span class="o">=</span> <span class="n">app_name</span> <span class="ow">or</span> <span class="n">name</span>
+
+        <span class="c1"># ...</span>
+</code></pre></div>
+
+<h3 id="observations">Observations</h3>
+<ol>
+<li>Both classes define <code>model_config = {"arbitrary_types_allowed": True}</code> to allow non-Pydantic types.</li>
+<li>Neither class defines Pydantic fields directly. Instead, they use regular instance attributes set in <code>__init__</code>.</li>
+<li>The parent ADK <code>BaseAgent</code> class likely uses Pydantic for validation, but our extensions don't fully leverage Pydantic's validation capabilities.</li>
+<li>Type hints are used consistently, which is good for IDE support and documentation.</li>
+</ol>
+<h2 id="proposed-standardized-approach">Proposed Standardized Approach</h2>
+<p>We propose the following standardized approach for Pydantic usage in our agent classes:</p>
+<h3 id="option-1-full-pydantic-model-approach">Option 1: Full Pydantic Model Approach</h3>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseAgent</span><span class="p">(</span><span class="n">ADKBaseAgent</span><span class="p">):</span>
+    <span class="c1"># Define Pydantic fields with type annotations</span>
+    <span class="n">model</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">instruction</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">tools</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">app_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Define model_config for Pydantic</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;arbitrary_types_allowed&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;extra&quot;</span><span class="p">:</span> <span class="s2">&quot;allow&quot;</span><span class="p">,</span>  <span class="c1"># Allow extra attributes not defined as fields</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_MODEL</span><span class="p">,</span>
+        <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">instruction</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">tools</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sub_agents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">session_service</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">app_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="c1"># Initialize the parent class first</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span>
+            <span class="n">sub_agents</span><span class="o">=</span><span class="n">sub_agents</span> <span class="ow">or</span> <span class="p">[],</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Use Pydantic&#39;s model_validate to validate and set fields</span>
+        <span class="n">validated_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">model</span><span class="p">,</span>
+            <span class="s2">&quot;instruction&quot;</span><span class="p">:</span> <span class="n">instruction</span><span class="p">,</span>
+            <span class="s2">&quot;tools&quot;</span><span class="p">:</span> <span class="n">tools</span> <span class="ow">or</span> <span class="p">[],</span>
+            <span class="s2">&quot;app_name&quot;</span><span class="p">:</span> <span class="n">app_name</span> <span class="ow">or</span> <span class="n">name</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">validated_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># Create the LLM agent and other non-Pydantic fields</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_llm_agent</span> <span class="o">=</span> <span class="n">LlmAgent</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session_service</span> <span class="o">=</span> <span class="n">session_service</span> <span class="ow">or</span> <span class="n">InMemorySessionService</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_runner</span> <span class="o">=</span> <span class="n">Runner</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</code></pre></div>
+
+<h3 id="option-2-hybrid-approach-recommended">Option 2: Hybrid Approach (Recommended)</h3>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseAgent</span><span class="p">(</span><span class="n">ADKBaseAgent</span><span class="p">):</span>
+    <span class="c1"># Define model_config for Pydantic</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;arbitrary_types_allowed&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_MODEL</span><span class="p">,</span>
+        <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">instruction</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">tools</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sub_agents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">session_service</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">app_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="c1"># Validate inputs before passing to parent class</span>
+        <span class="n">validated_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">validated_tools</span> <span class="o">=</span> <span class="n">tools</span> <span class="ow">or</span> <span class="p">[]</span>
+
+        <span class="c1"># Initialize the parent class first</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span>
+            <span class="n">sub_agents</span><span class="o">=</span><span class="n">sub_agents</span> <span class="ow">or</span> <span class="p">[],</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Store parameters as instance attributes with leading underscore</span>
+        <span class="c1"># to indicate they are &quot;private&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="n">validated_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instruction</span> <span class="o">=</span> <span class="n">instruction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tools</span> <span class="o">=</span> <span class="n">validated_tools</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_app_name</span> <span class="o">=</span> <span class="n">app_name</span> <span class="ow">or</span> <span class="n">name</span>
+
+        <span class="c1"># ...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate the model parameter.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">model</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">DEFAULT_MODEL</span>
+        <span class="c1"># Add additional validation logic here</span>
+        <span class="k">return</span> <span class="n">model</span>
+</code></pre></div>
+
+<h3 id="option-3-property-based-approach">Option 3: Property-Based Approach</h3>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseAgent</span><span class="p">(</span><span class="n">ADKBaseAgent</span><span class="p">):</span>
+    <span class="c1"># Define model_config for Pydantic</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;arbitrary_types_allowed&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_MODEL</span><span class="p">,</span>
+        <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">instruction</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">tools</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sub_agents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">session_service</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">app_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="c1"># Initialize the parent class first</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span>
+            <span class="n">sub_agents</span><span class="o">=</span><span class="n">sub_agents</span> <span class="ow">or</span> <span class="p">[],</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Store parameters as private instance attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instruction</span> <span class="o">=</span> <span class="n">instruction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tools</span> <span class="o">=</span> <span class="n">tools</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_app_name</span> <span class="o">=</span> <span class="n">app_name</span> <span class="ow">or</span> <span class="n">name</span>
+
+        <span class="c1"># ...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the model.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span>
+
+    <span class="nd">@model</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the model with validation.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">DEFAULT_MODEL</span>
+        <span class="c1"># Add additional validation logic here</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="n">value</span>
+</code></pre></div>
+
+<h2 id="recommendation">Recommendation</h2>
+<p>We recommend adopting <strong>Option 2: Hybrid Approach</strong> for the following reasons:</p>
+<ol>
+<li><strong>Compatibility</strong>: It maintains compatibility with the existing codebase and the ADK's BaseAgent class.</li>
+<li><strong>Validation</strong>: It allows for explicit validation of inputs in dedicated methods.</li>
+<li><strong>Encapsulation</strong>: It maintains the convention of using leading underscores for "private" attributes.</li>
+<li><strong>Simplicity</strong>: It doesn't require a significant refactoring of the existing code.</li>
+</ol>
+<p>This approach strikes a balance between leveraging Pydantic's capabilities and maintaining the existing code structure.</p>
+<h2 id="implementation-plan">Implementation Plan</h2>
+<ol>
+<li><strong>Update BaseAgent</strong>: Implement the hybrid approach in the BaseAgent class. (Done)</li>
+<li><strong>Documentation</strong>: Add docstrings explaining the validation methods.</li>
+<li><strong>Testing</strong>: Update tests to verify validation logic.</li>
+</ol>
+<h2 id="future-considerations">Future Considerations</h2>
+<p>As we continue to develop the codebase, we should consider:</p>
+<ol>
+<li><strong>Stricter Validation</strong>: Adding more comprehensive validation for critical parameters.</li>
+<li><strong>Schema Documentation</strong>: Using Pydantic's schema generation capabilities to document the agent's configuration options.</li>
+<li><strong>Configuration Management</strong>: Exploring Pydantic's settings management for agent configuration.</li>
+</ol>
+<p>By standardizing our approach to Pydantic usage, we'll improve code quality, maintainability, and developer experience.</p>
+        
+        <div class="footer">
+            <p>Generated on 2025-04-21 09:00:32</p>
+            <p><a href="index.html">Back to Documentation Index</a></p>
+        </div>
+    </body>
+    </html>
+    

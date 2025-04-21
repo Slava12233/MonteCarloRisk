@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 # Load environment variables from .env file
 load_dotenv()
 
-from src.agents.search_agent import SearchAgent
+from src.agents.base_agent import BaseAgent # Changed import
 from src.deployment.local import run_locally
 from src.utils.logging import configure_logging
 
@@ -34,12 +34,12 @@ def main(host: str = "127.0.0.1", port: int = 8000, reload: bool = False):
         port: The port to bind to (default: 8000).
         reload: Whether to reload the server on code changes (default: False).
     """
-    logger.info("Starting Streaming Agent Example")
+    logger.info("Starting Streaming Base Agent Example (with Search Tool)")
 
-    # Create a search agent
-    agent = SearchAgent(
-        name="streaming_search_agent",
-        description="A search agent with streaming responses.",
+    # Create a base agent (it now includes the search tool via registry modification)
+    agent = BaseAgent(
+        name="streaming_base_agent_with_search",
+        description="A base agent with streaming responses and search tool.",
         instruction="""I can answer your questions by searching the internet. 
         
 My responses will be streamed in real-time as I generate them.

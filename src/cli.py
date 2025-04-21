@@ -12,7 +12,7 @@ from typing import Optional, List, Dict, Any
 
 from .registry import create_agent, list_agent_types
 from .deployment.local import run_locally
-from .deployment.vertex import deploy_to_vertex
+# Removed: from .deployment.vertex import deploy_to_vertex
 from .utils.logging import configure_logging, get_logger
 from .config import print_config
 

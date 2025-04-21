@@ -1,0 +1,530 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Google ADK Agent Starter Kit - Project Visualization - MonteCarloRisk_AI</title>
+        <link rel="stylesheet" href="style.css">
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                mermaid.initialize({
+                    startOnLoad: true,
+                    theme: 'default',
+                    securityLevel: 'loose',
+                    flowchart: { useMaxWidth: false }
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div class="navbar">
+            <h1>MonteCarloRisk_AI</h1>
+            <p><a href="index.html" style="color: white;">← Back to Documentation Index</a></p>
+        </div>
+        
+        <h1 id="google-adk-agent-starter-kit-project-visualization">Google ADK Agent Starter Kit - Project Visualization</h1>
+<h2 id="1-project-overview">1. Project Overview</h2>
+<p>The Google ADK Agent Starter Kit provides a standardized foundation for building AI agents using Google's Agent Development Kit (ADK). It implements a true custom agent architecture that inherits directly from Google's <code>BaseAgent</code> class and follows the recommended patterns for custom agent development. The kit includes reusable components, patterns, and examples that developers can use as templates for their own agent implementations.</p>
+<h3 id="11-goals-and-objectives">1.1. Goals and Objectives</h3>
+<ul>
+<li>Create a minimal yet complete foundation for building Google ADK agents.</li>
+<li>Provide clear patterns for integrating built-in tools like Google Search.</li>
+<li>Simplify deployment to Vertex AI and local development.</li>
+<li>Establish consistent patterns for agent development.</li>
+<li>Enable rapid prototyping and development of new agents.</li>
+</ul>
+<h3 id="12-key-features">1.2. Key Features</h3>
+<ul>
+<li><strong>True Custom Agent Architecture</strong>: Inherits directly from Google's <code>BaseAgent</code> class.</li>
+<li><strong>LLM Integration</strong>: Uses Google's Gemini models.</li>
+<li><strong>Tool Integration</strong>: Seamless integration with Google Search and custom tools.</li>
+<li><strong>Flexible Orchestration</strong>: Supports complex orchestration patterns.</li>
+<li><strong>Comprehensive Testing</strong>: Includes unit tests (Pytest).</li>
+<li><strong>Interactive Mode</strong>: Supports interactive conversations via CLI.</li>
+<li><strong>Deployment Options</strong>: Local (FastAPI), Vertex AI Endpoint, and Vertex AI Agent Engine.</li>
+<li><strong>Configuration Driven</strong>: Uses <code>.env</code> files for configuration.</li>
+<li><strong>Extensibility</strong>: Agent registry pattern for easy addition of new agent types.</li>
+</ul>
+<hr />
+<h2 id="2-architecture">2. Architecture</h2>
+<h3 id="21-core-components-diagram">2.1. Core Components Diagram</h3>
+<p>This diagram shows the main functional components and their relationships as defined in <code>docs/PLANNING_1.md</code>.</p>
+<div class="mermaid">
+graph TD
+    A["Base Agent"] --> B("Tool Integration")
+    A --> C("Session Management")
+    A --> D("Authentication")
+    A --> E("Deployment")
+    A --> F("LLM Agent - Gemini")
+
+    B --> B1["Google Search"]
+    B --> B3["Custom Tools"]
+
+    E --> E1["Local Development - FastAPI"]
+    E --> E2["Vertex AI Endpoint Deployment"]
+    E --> E3["Vertex AI Agent Engine Deployment"]
+
+    F --> B
+</div>
+
+<h3 id="22-layered-architecture">2.2. Layered Architecture</h3>
+<p>The starter kit follows a layered architecture promoting modularity and separation of concerns, as detailed in <code>docs/DOCUMENTATION_1.md</code>.</p>
+<div class="mermaid">
+graph TD
+    Client["Client Layer (CLI, Web UI)"] --> AgentLayer["Agent Layer (BaseAgent, SearchAgent)"]
+    AgentLayer --> Orchestration["Orchestration Layer (_run_async_impl)"]
+    Orchestration --> ToolLayer["Tool Layer (Google Search, Custom Tools)"]
+    ToolLayer --> ModelLayer["Model Layer (Gemini via Google AI API)"]
+    AgentLayer --> SessionService["Session Service (InMemory)"]
+    AgentLayer --> Runner["Runner"]
+    Client --> Runner
+</div>
+
+<ul>
+<li><strong>Client Layer</strong>: Interacts with the user (e.g., CLI, Web UI).</li>
+<li><strong>Agent Layer</strong>: Contains the core agent logic (<code>BaseAgent</code>, specific agents like <code>SearchAgent</code>). Manages sub-agents, sessions, and runners.</li>
+<li><strong>Orchestration Layer</strong>: Custom logic within the agent's <code>_run_async_impl</code> method, deciding how to use tools and models.</li>
+<li><strong>Tool Layer</strong>: Provides specific capabilities (e.g., web search, custom functions).</li>
+<li><strong>Model Layer</strong>: Interacts with the underlying Large Language Model (Gemini).</li>
+<li><strong>Session Service</strong>: Manages conversation state.</li>
+<li><strong>Runner</strong>: Handles the execution flow for a given session.</li>
+</ul>
+<hr />
+<h2 id="3-project-structure">3. Project Structure</h2>
+<p>The project follows a standard Python package structure:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">MonteCarloRisk_AI</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="o">.</span><span class="n">env</span><span class="w">                  </span><span class="c1"># Environment variables (local, not committed)</span>
+<span class="err">├──</span><span class="w"> </span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">example</span><span class="w">          </span><span class="c1"># Example environment variables</span>
+<span class="err">├──</span><span class="w"> </span><span class="o">.</span><span class="n">gitignore</span><span class="w">            </span><span class="c1"># Git ignore rules</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">pytest</span><span class="o">.</span><span class="n">ini</span><span class="w">            </span><span class="c1"># Pytest configuration</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">README</span><span class="o">.</span><span class="n">md</span><span class="w">             </span><span class="c1"># Project overview and setup guide</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">requirements</span><span class="o">.</span><span class="n">txt</span><span class="w">      </span><span class="c1"># Python dependencies</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">run</span><span class="o">.</span><span class="n">py</span><span class="w">                </span><span class="c1"># Main CLI entry point</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">chat</span><span class="o">.</span><span class="n">py</span><span class="w">               </span><span class="c1"># Script to interact with deployed agent via SDK</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">direct_deploy</span><span class="o">.</span><span class="n">py</span><span class="w">      </span><span class="c1"># Streamlined script for direct deployment (recommended)</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">commands</span><span class="o">.</span><span class="n">txt</span><span class="w">          </span><span class="c1"># Useful commands for reference</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">TASK</span><span class="o">.</span><span class="n">md</span><span class="w">               </span><span class="c1"># Current and completed tasks</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">backup</span><span class="o">/</span><span class="w">               </span><span class="c1"># Backup directory (ignored by git)</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">setup</span><span class="o">.</span><span class="n">py</span><span class="w">              </span><span class="c1"># Package setup for distribution</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">docs</span><span class="o">/</span><span class="w">                 </span><span class="c1"># Documentation files</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">ACTION_ITEMS</span><span class="o">.</span><span class="n">md</span><span class="w">   </span><span class="c1"># Action items and improvements</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">DOCUMENTATION_1</span><span class="o">.</span><span class="n">md</span><span class="w">  </span><span class="c1"># Detailed project documentation</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">PLANNING</span><span class="o">.</span><span class="n">md</span><span class="w">         </span><span class="c1"># Architecture and planning document</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">PYDANTIC_USAGE</span><span class="o">.</span><span class="n">md</span><span class="w">   </span><span class="c1"># Pydantic guidelines</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">AGENT_ENGINE_DEPLOYMENT</span><span class="o">.</span><span class="n">md</span><span class="w"> </span><span class="c1"># Guide for deploying to Agent Engine</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">DIRECT_DEPLOY</span><span class="o">.</span><span class="n">md</span><span class="w">    </span><span class="c1"># Guide for direct deployment (recommended)</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">project_visualization</span><span class="o">.</span><span class="n">html</span><span class="w"> </span><span class="c1"># This document in HTML format</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">project_visualization</span><span class="o">.</span><span class="n">md</span><span class="w">   </span><span class="c1"># This document</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">index</span><span class="o">.</span><span class="n">md</span><span class="w">          </span><span class="c1"># Central documentation index</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">environments</span><span class="o">/</span><span class="w">         </span><span class="c1"># Environment-specific configurations</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">development</span><span class="o">.</span><span class="n">yaml</span><span class="w">  </span><span class="c1"># Development environment configuration</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">staging</span><span class="o">.</span><span class="n">yaml</span><span class="w">      </span><span class="c1"># Staging environment configuration</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">production</span><span class="o">.</span><span class="n">yaml</span><span class="w">   </span><span class="c1"># Production environment configuration</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">examples</span><span class="o">/</span><span class="w">             </span><span class="c1"># Example agent usage scripts</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">__init__</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">multi_tool_agent</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">simple_search_agent</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">streaming_agent</span><span class="o">.</span><span class="n">py</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">src</span><span class="o">/</span><span class="w">                  </span><span class="c1"># Source code directory</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">__init__</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">cli</span><span class="o">.</span><span class="n">py</span><span class="w">            </span><span class="c1"># Command Line Interface implementation</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">config</span><span class="o">.</span><span class="n">py</span><span class="w">         </span><span class="c1"># Configuration loading (from .env)</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">registry</span><span class="o">.</span><span class="n">py</span><span class="w">       </span><span class="c1"># Agent type registry</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">agents</span><span class="o">/</span><span class="w">           </span><span class="c1"># Agent implementations</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">__init__</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">base_agent</span><span class="o">.</span><span class="n">py</span><span class="w"> </span><span class="c1"># Core base agent class (includes search capability)</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">deployment</span><span class="o">/</span><span class="w">       </span><span class="c1"># Deployment utilities</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">__init__</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">local</span><span class="o">.</span><span class="n">py</span><span class="w">      </span><span class="c1"># Local FastAPI server deployment</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">vertex</span><span class="o">.</span><span class="n">py</span><span class="w">     </span><span class="c1"># Vertex AI deployment helpers</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="k">static</span><span class="o">/</span><span class="w">       </span><span class="c1"># Static files for local web UI</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">css</span><span class="o">/</span><span class="n">chat</span><span class="o">.</span><span class="n">css</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">js</span><span class="o">/</span><span class="n">chat</span><span class="o">.</span><span class="n">js</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">templates</span><span class="o">/</span><span class="w">    </span><span class="c1"># HTML templates for local web UI</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">       </span><span class="err">└──</span><span class="w"> </span><span class="n">index</span><span class="o">.</span><span class="n">html</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">tools</span><span class="o">/</span><span class="w">            </span><span class="c1"># Tool implementations</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">__init__</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">custom_tools</span><span class="o">.</span><span class="n">py</span><span class="w"> </span><span class="c1"># Custom tool creation utilities &amp; examples</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">utils</span><span class="o">/</span><span class="w">            </span><span class="c1"># Utility modules</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">__init__</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">auth</span><span class="o">.</span><span class="n">py</span><span class="w">       </span><span class="c1"># Authentication helpers</span>
+<span class="err">│</span><span class="w">       </span><span class="err">└──</span><span class="w"> </span><span class="n">logging</span><span class="o">.</span><span class="n">py</span><span class="w">    </span><span class="c1"># Logging setup</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">tests</span><span class="o">/</span><span class="w">                </span><span class="c1"># Unit and integration tests (Pytest)</span>
+<span class="w">    </span><span class="err">├──</span><span class="w"> </span><span class="n">__init__</span><span class="o">.</span><span class="n">py</span>
+<span class="w">    </span><span class="err">├──</span><span class="w"> </span><span class="n">test_custom_tools</span><span class="o">.</span><span class="n">py</span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="n">test_registry</span><span class="o">.</span><span class="n">py</span>
+</code></pre></div>
+
+<hr />
+<h2 id="4-core-components">4. Core Components</h2>
+<h3 id="41-baseagent-srcagentsbase_agentpy">4.1. BaseAgent (<code>src/agents/base_agent.py</code>)</h3>
+<p>The foundation of the agent architecture, inheriting directly from Google's <code>ADKBaseAgent</code>.</p>
+<ul>
+<li><strong>Inheritance</strong>: Extends <code>google.adk.agents.BaseAgent</code>.</li>
+<li><strong>Initialization (<code>__init__</code>)</strong>:<ul>
+<li>Takes name, model, description, instruction, tools, etc.</li>
+<li>Performs validation using internal methods (<code>_validate_model</code>, <code>_validate_tools</code>) following the hybrid Pydantic approach.</li>
+<li>Initializes the parent <code>ADKBaseAgent</code>.</li>
+<li>Creates and manages an internal <code>LlmAgent</code> (<code>self._llm_agent</code>) for reasoning, passing it the model, instruction, and tools.</li>
+<li>Sets up session management (default: <code>InMemorySessionService</code>).</li>
+<li>Creates a <code>Runner</code> instance for execution.</li>
+</ul>
+</li>
+<li><strong>Orchestration (<code>_run_async_impl</code>)</strong>:<ul>
+<li>The core logic method required by <code>ADKBaseAgent</code>.</li>
+<li>Currently, it delegates execution directly to the internal <code>LlmAgent</code> (<code>self._llm_agent.run_async(ctx)</code>).</li>
+<li>This is the primary place to customize agent behavior, add conditional logic, or orchestrate multiple sub-agents or tools.</li>
+</ul>
+</li>
+<li><strong>Pydantic Usage</strong>: Uses a hybrid approach. Sets <code>model_config = {"arbitrary_types_allowed": True}</code> and uses internal validation methods rather than Pydantic field definitions.</li>
+<li><strong>Helper Methods</strong>: Provides methods like <code>run</code>, <code>run_and_get_response</code>, <code>create_session</code>, <code>get_session</code> for easier interaction.</li>
+</ul>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Simplified __init__ from src/agents/base_agent.py</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseAgent</span><span class="p">(</span><span class="n">ADKBaseAgent</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;arbitrary_types_allowed&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_MODEL</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">tools</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># ... validation ...</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="n">validated_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instruction</span> <span class="o">=</span> <span class="n">instruction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tools</span> <span class="o">=</span> <span class="n">validated_tools</span>
+        <span class="c1"># ...</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_llm_agent</span> <span class="o">=</span> <span class="n">LlmAgent</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_llm&quot;</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">,</span>
+            <span class="n">instruction</span><span class="o">=</span><span class="n">instruction</span><span class="p">,</span>
+            <span class="n">tools</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tools</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sub_agents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_llm_agent</span><span class="p">)</span>
+        <span class="c1"># ... session service, runner ...</span>
+
+    <span class="nd">@override</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_run_async_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">InvocationContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncGenerator</span><span class="p">[</span><span class="n">Event</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">] Running LLM agent&quot;</span><span class="p">)</span>
+        <span class="k">async</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_llm_agent</span><span class="o">.</span><span class="n">run_async</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">event</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">] Agent execution completed&quot;</span><span class="p">)</span>
+</code></pre></div>
+
+<h3 id="42-registry-system-srcregistrypy">4.2. Registry System (<code>src/registry.py</code>)</h3>
+<p>A mechanism for registering and creating different types of agents dynamically.</p>
+<ul>
+<li><strong>Purpose</strong>: Decouples agent creation from the code that uses agents (like the CLI). Allows adding new agent types without modifying the core CLI logic.</li>
+<li><strong>Functionality</strong>:<ul>
+<li><code>register_agent_type(type_name, factory_function)</code>: Adds an agent type and its creation function.</li>
+<li><code>get_agent_factory(type_name)</code>: Retrieves the factory function.</li>
+<li><code>create_agent(type_name, **kwargs)</code>: Creates an agent instance using its factory.</li>
+<li><code>list_agent_types()</code>: Returns available agent types.</li>
+</ul>
+</li>
+<li><strong>Usage</strong>: Uses factory functions to create agents. The CLI (<code>src/cli.py</code>) uses this registry to know which agents it can run.</li>
+</ul>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Simplified usage from src/registry.py</span>
+<span class="n">_agent_registry</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AgentFactory</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">register_agent_type</span><span class="p">(</span><span class="n">agent_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">factory</span><span class="p">:</span> <span class="n">AgentFactory</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">_agent_registry</span><span class="p">[</span><span class="n">agent_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">factory</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">create_agent</span><span class="p">(</span><span class="n">agent_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="n">factory</span> <span class="o">=</span> <span class="n">get_agent_factory</span><span class="p">(</span><span class="n">agent_type</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">factory</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<span class="c1"># Registering BaseAgent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.agents.base_agent</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseAgent</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_create_base_agent</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BaseAgent</span><span class="p">:</span>
+    <span class="c1"># Note: BaseAgent might require specific tools or config depending on usage</span>
+    <span class="k">return</span> <span class="n">BaseAgent</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;base_agent&#39;</span><span class="p">),</span>
+        <span class="n">model</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">),</span>
+        <span class="n">description</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;description&#39;</span><span class="p">,</span> <span class="s1">&#39;A generic base agent.&#39;</span><span class="p">),</span>
+        <span class="n">instruction</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;instruction&#39;</span><span class="p">,</span> <span class="s1">&#39;I am a base agent.&#39;</span><span class="p">),</span>
+        <span class="n">tools</span><span class="o">=</span><span class="p">[</span><span class="n">google_search</span><span class="p">],</span> <span class="c1"># Add the google_search tool</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+
+<span class="n">register_agent_type</span><span class="p">(</span><span class="s2">&quot;base&quot;</span><span class="p">,</span> <span class="n">_create_base_agent</span><span class="p">)</span>
+</code></pre></div>
+
+<h3 id="43-tools-srctoolscustom_toolspy-googleadktools">4.3. Tools (<code>src/tools/custom_tools.py</code>, <code>google.adk.tools</code>)</h3>
+<p>Functions that agents can call to perform specific actions.</p>
+<ul>
+<li><strong>Built-in Tools</strong>: The kit uses <code>google_search</code> from <code>google.adk.tools</code>.</li>
+<li><strong>Custom Tools</strong>:<ul>
+<li>Defined as standard Python functions with type hints and docstrings.</li>
+<li>The docstring is crucial as it tells the LLM what the tool does and how to use it.</li>
+<li><code>src/tools/custom_tools.py</code> provides helpers (<code>create_custom_tool</code>, <code>CustomToolBuilder</code>) to wrap these functions into <code>FunctionTool</code> objects compatible with the ADK.</li>
+<li>Example: <code>get_current_time</code> tool is defined and created.</li>
+</ul>
+</li>
+<li><strong>Integration</strong>: Tools are passed to the <code>BaseAgent</code> (and subsequently the internal <code>LlmAgent</code>) during initialization. The <code>LlmAgent</code> decides when to call a tool based on the conversation and tool descriptions.</li>
+</ul>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Example from src/tools/custom_tools.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">google.adk.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">FunctionTool</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_current_time</span><span class="p">(</span><span class="n">timezone</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;UTC&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the current time in a specific timezone.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        timezone: The timezone to get the time for (default: UTC).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The current time in the specified timezone.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Placeholder implementation</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;The current time in </span><span class="si">{</span><span class="n">timezone</span><span class="si">}</span><span class="s2"> is 12:00 PM.&quot;</span>
+
+<span class="c1"># Creating the tool</span>
+<span class="n">current_time_tool</span> <span class="o">=</span> <span class="n">FunctionTool</span><span class="p">(</span><span class="n">get_current_time</span><span class="p">)</span>
+
+<span class="c1"># Using the helper</span>
+<span class="c1"># current_time_tool = create_custom_tool(get_current_time)</span>
+</code></pre></div>
+
+<h3 id="44-configuration-srcconfigpy">4.4. Configuration (<code>src/config.py</code>)</h3>
+<p>Manages application settings using environment variables.</p>
+<ul>
+<li><strong>Loading</strong>: Uses <code>python-dotenv</code> to load variables from a <code>.env</code> file.</li>
+<li><strong>Variables</strong>: Defines constants for settings like <code>GOOGLE_API_KEY</code>, <code>GOOGLE_CLOUD_PROJECT</code>, <code>DEFAULT_MODEL</code>, <code>LOG_LEVEL</code>, <code>WEB_UI_PORT</code>, etc.</li>
+<li><strong>Access</strong>: Provides a <code>get_config()</code> function to retrieve settings as a dictionary.</li>
+<li><strong>Validation</strong>: Includes a <code>validate_config()</code> function to check for required settings based on the mode (Vertex AI vs API Key).</li>
+</ul>
+<h3 id="45-deployment-srcdeployment-direct_deploypy-deploy_agent_enginepy">4.5. Deployment (<code>src/deployment/</code>, <code>direct_deploy.py</code>, <code>deploy_agent_engine.py</code>)</h3>
+<p>Handles running the agent locally or deploying to Vertex AI.</p>
+<ul>
+<li>
+<p><strong>Local (<code>local.py</code>)</strong>:</p>
+<ul>
+<li>Uses FastAPI and Uvicorn to run a local web server.</li>
+<li>Provides a simple WebSocket-based chat interface (HTML/CSS/JS in <code>static/</code> and <code>templates/</code>).</li>
+<li>Handles multiple sessions.</li>
+<li>Manages port conflicts by trying subsequent ports if the default is busy.</li>
+</ul>
+</li>
+<li>
+<p><strong>Vertex AI Endpoint (<code>vertex.py</code>)</strong>:</p>
+<ul>
+<li>Contains helper functions (<code>prepare_deployment_package</code>, <code>deploy_to_vertex_ai</code>) to package the agent source code and deploy it as a Vertex AI Endpoint.</li>
+<li>Generates a <code>main.py</code> entry point for the Vertex AI container that uses the agent registry to instantiate the correct agent.</li>
+</ul>
+</li>
+<li>
+<p><strong>Direct Deployment to Agent Engine (<code>direct_deploy.py</code>) - Recommended</strong>:</p>
+<ul>
+<li>Provides a streamlined deployment process for Vertex AI Agent Engine.</li>
+<li>Reads configuration directly from environment variables (.env file).</li>
+<li>Handles the entire deployment process in a single script:<ul>
+<li>Creates an agent instance with default or configured parameters</li>
+<li>Tests the agent locally before deployment</li>
+<li>Deploys to Vertex AI Agent Engine</li>
+<li>Updates chat.py with the new Agent Engine ID</li>
+<li>Creates a backup of the original chat.py file</li>
+</ul>
+</li>
+<li>Simple to use with minimal configuration (just run <code>python direct_deploy.py</code>).</li>
+</ul>
+</li>
+<li>
+<p><strong>Configurable Deployment to Agent Engine (<code>deploy_agent_engine.py</code>)</strong>:</p>
+<ul>
+<li>Provides a more configurable deployment script for Vertex AI Agent Engine.</li>
+<li>Uses YAML configuration files (deployment_config.yaml with environment-specific overrides).</li>
+<li>Supports different deployment environments (development, staging, production).</li>
+<li>Includes local and remote testing capabilities.</li>
+<li>More complex but offers greater flexibility for different deployment scenarios.</li>
+</ul>
+</li>
+</ul>
+<h3 id="46-cli-runpy-srcclipy">4.6. CLI (<code>run.py</code>, <code>src/cli.py</code>)</h3>
+<p>Provides a command-line interface for interacting with the starter kit.</p>
+<ul>
+<li><strong>Entry Point</strong>: <code>run.py</code> is the main script executed.</li>
+<li><strong>Implementation</strong>: <code>src/cli.py</code> uses the agent registry to create and run agents.</li>
+<li><strong>Commands</strong>:<ul>
+<li><code>run [AGENT_TYPE]</code>: Runs the specified agent (using the registry). Options like <code>--interactive</code> for chat or <code>--port</code> for local web UI.</li>
+<li><code>config</code>: Displays configuration information.</li>
+<li>Lists available agent types from the registry.</li>
+</ul>
+</li>
+</ul>
+<h3 id="47-chat-utility-chatpy">4.7. Chat Utility (<code>chat.py</code>)</h3>
+<p>A script for interacting with agents deployed on Vertex AI Agent Engine.</p>
+<ul>
+<li><strong>Functionality</strong>:<ul>
+<li>Connects to a deployed agent using the Vertex AI SDK.</li>
+<li>Creates a session for the conversation.</li>
+<li>Provides an interactive chat interface in the terminal.</li>
+<li>Handles streaming responses from the agent.</li>
+</ul>
+</li>
+<li><strong>Usage</strong>: Run with <code>python chat.py</code> after setting appropriate configuration variables.</li>
+</ul>
+<hr />
+<h2 id="5-component-interactions">5. Component Interactions</h2>
+<p>The following describes the typical flow of execution:</p>
+<ol>
+<li><strong>User Interaction (CLI)</strong>: The user runs a command via <code>run.py</code>, e.g., <code>python run.py run base --interactive</code>.</li>
+<li><strong>CLI Processing (<code>src/cli.py</code>)</strong>: The CLI parses the command. For <code>run</code>, it identifies the agent type ("base").</li>
+<li><strong>Agent Creation (<code>src/registry.py</code>)</strong>: The CLI calls <code>registry.create_agent("base", ...)</code>. The registry finds the factory for "base" and executes it, creating a <code>BaseAgent</code> instance with the Google Search tool.</li>
+<li><strong>Agent Initialization (<code>BaseAgent</code>)</strong>:<ul>
+<li><code>BaseAgent.__init__</code> validates inputs, creates the internal <code>LlmAgent</code> (passing tools), sets up the session service, and creates the <code>Runner</code>.</li>
+</ul>
+</li>
+<li><strong>Execution (Interactive Mode)</strong>:<ul>
+<li>The CLI starts an input loop.</li>
+<li>For each user message:<ul>
+<li>The message is passed to <code>agent.run_and_get_response(user_id, session_id, message)</code> or similar method involving the <code>Runner</code>.</li>
+<li>The <code>Runner</code> manages the session state and calls the agent's <code>_run_async_impl</code> method via the ADK framework.</li>
+<li><code>BaseAgent._run_async_impl</code> delegates to <code>self._llm_agent.run_async(ctx)</code>.</li>
+<li>The <code>LlmAgent</code> interacts with the Gemini model. Based on the instruction and query, it might decide to:<ul>
+<li>Generate a direct response.</li>
+<li>Call a tool (e.g., <code>google_search</code>). If a tool is called, the <code>LlmAgent</code> receives the tool's output and continues reasoning to generate the final response.</li>
+</ul>
+</li>
+<li>Events are yielded back through the layers.</li>
+<li>The CLI extracts and prints the final response text.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Execution (Local Web UI)</strong>:<ul>
+<li><code>src/deployment/local.py</code> starts a FastAPI server.</li>
+<li>The browser connects via WebSocket.</li>
+<li>Messages are sent over WebSocket, processed similarly to interactive mode using the agent and runner, and responses streamed back.</li>
+</ul>
+</li>
+</ol>
+<h3 id="interaction-diagram">Interaction Diagram</h3>
+<div class="mermaid">
+sequenceDiagram
+    participant User as "User"
+    participant CLI as "CLI (run.py / cli.py)"
+    participant Registry as "Registry (registry.py)"
+    participant Agent as "Agent (BaseAgent)"
+    participant LlmAgent as "LlmAgent (ADK)"
+    participant Tool as "Tool (e.g., google_search)"
+    participant GeminiAPI as "Gemini API"
+    participant Runner as "Runner (ADK)"
+    participant SessionService as "SessionService (ADK)"
+
+    User->>CLI: "python run.py run base --interactive"
+    CLI->>Registry: "create_agent('base', ...)"
+    Registry-->>CLI: "agent_instance (BaseAgent)"
+    Note over Agent: "BaseAgent.__init__()"
+    Agent->>LlmAgent: "Creates LlmAgent(tools=[google_search])"
+    Agent->>SessionService: "Creates InMemorySessionService()"
+    Agent->>Runner: "Creates Runner(agent=self)"
+    CLI->>User: "Prompt for input"
+    User->>CLI: "What is the capital of France?"
+    CLI->>Runner: "run(user_id, session_id, message)"
+    Runner->>SessionService: "Get/Update Session State"
+    Runner->>Agent: "Calls _run_async_impl via ADK framework"
+    Agent->>LlmAgent: "run_async(ctx)"
+    LlmAgent->>GeminiAPI: "Sends prompt + tools schema"
+    GeminiAPI-->>LlmAgent: "Suggests calling google_search('capital of France')"
+    LlmAgent->>Tool: "Executes google_search('capital of France')"
+    Tool-->>LlmAgent: "Returns 'Paris'"
+    LlmAgent->>GeminiAPI: "Sends tool result"
+    GeminiAPI-->>LlmAgent: "Final response 'The capital of France is Paris.'"
+    LlmAgent-->>Agent: "Yields final response event"
+    Agent-->>Runner: "Yields event"
+    Runner-->>CLI: "Returns list of events"
+    CLI->>User: "Prints 'The capital of France is Paris.'"
+</div>
+
+<hr />
+<h2 id="7-basic-usage-examples">7. Basic Usage Examples</h2>
+<h3 id="71-interactive-mode-base-agent">7.1. Interactive Mode (Base Agent)</h3>
+<div class="codehilite"><pre><span></span><code>python<span class="w"> </span>run.py<span class="w"> </span>run<span class="w"> </span>base<span class="w"> </span>--interactive
+</code></pre></div>
+
+<h3 id="72-programmatic-use-base-agent-with-search-tool">7.2. Programmatic Use (Base Agent with Search Tool)</h3>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">src.agents.base_agent</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseAgent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">google.adk.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">google_search</span>
+
+<span class="c1"># Create a base agent with Google Search</span>
+<span class="n">agent</span> <span class="o">=</span> <span class="n">BaseAgent</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_base_agent&quot;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;My custom base agent with search&quot;</span><span class="p">,</span>
+    <span class="n">instruction</span><span class="o">=</span><span class="s2">&quot;Answer questions using Google Search&quot;</span><span class="p">,</span>
+    <span class="n">tools</span><span class="o">=</span><span class="p">[</span><span class="n">google_search</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="c1"># Run the agent</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">run_and_get_response</span><span class="p">(</span><span class="n">user_id</span><span class="o">=</span><span class="s2">&quot;prog_user&quot;</span><span class="p">,</span> <span class="n">session_id</span><span class="o">=</span><span class="s2">&quot;prog_session&quot;</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s2">&quot;What is the capital of France?&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+<span class="c1"># Output: The capital of France is Paris. (or similar)</span>
+</code></pre></div>
+
+<h3 id="73-creating-a-custom-agent">7.3. Creating a Custom Agent</h3>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">src.agents.base_agent</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseAgent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncGenerator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">override</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">google.adk.agents.invocation_context</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvocationContext</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">google.adk.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
+<span class="c1"># Import your custom tool if needed</span>
+<span class="c1"># from src.tools.custom_tools import my_custom_tool</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyCustomAgent</span><span class="p">(</span><span class="n">BaseAgent</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;my_custom_agent&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">):</span>
+        <span class="c1"># Add custom tools here if needed</span>
+        <span class="c1"># tools = [my_custom_tool]</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="c1"># Pass tools</span>
+
+    <span class="nd">@override</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_run_async_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">InvocationContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncGenerator</span><span class="p">[</span><span class="n">Event</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="c1"># Implement custom orchestration logic here</span>
+        <span class="c1"># Example: Check state, call specific tools, modify prompts...</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Custom logic running for: </span><span class="si">{</span><span class="n">ctx</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_message&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Default: delegate to LLM agent</span>
+        <span class="k">async</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_llm_agent</span><span class="o">.</span><span class="n">run_async</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">event</span>
+
+<span class="c1"># Remember to register this agent in src/registry.py to use it via CLI</span>
+<span class="c1"># register_agent_type(&quot;custom&quot;, lambda **kwargs: MyCustomAgent(**kwargs))</span>
+<span class="c1"># Then run: python run.py run custom --interactive</span>
+</code></pre></div>
+
+<h3 id="74-interacting-with-a-deployed-agent">7.4. Interacting with a Deployed Agent</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Configure variables in chat.py or set environment variables</span>
+python<span class="w"> </span>chat.py
+</code></pre></div>
+
+<h3 id="75-deploying-using-direct_deploypy-recommended">7.5. Deploying Using direct_deploy.py (Recommended)</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Ensure you have set these variables in your .env file:</span>
+<span class="c1"># GOOGLE_CLOUD_PROJECT=your-project-id</span>
+<span class="c1"># STAGING_BUCKET=your-bucket-name</span>
+<span class="c1"># GOOGLE_CLOUD_REGION=us-central1 (optional, defaults to us-central1)</span>
+
+<span class="c1"># Run the direct deployment script</span>
+python<span class="w"> </span>direct_deploy.py
+
+<span class="c1"># After successful deployment, interact with your deployed agent</span>
+python<span class="w"> </span>chat.py
+</code></pre></div>
+
+<p>Example output from direct_deploy.py:</p>
+<p>```
+2025-04-21 08:33:41,030 - direct_deploy - INFO - Using Project ID: risk-manager-457219
+2025-04-21 08:33:41,030 - direct_deploy - INFO - Using Region: us-central1
+2025-04-21 08:33:41,030 - direct_deploy - INFO - Using Staging Bucket: gs://risk7
+...
+2025-04-21 08:37:48,023 - direct_deploy - INFO - Agent deployed successfully to Agent Engine: 1578942677951447040
+...
+2025-04-21 08:37:52,590 - direct_deploy - INFO - Direct deployment completed successfully!
+2025-04-21 08:37:52,590 - direct_deploy - INFO - Agent Engine ID: 1578942677951447040
+2025-04-21 08:37:52,590 - direct_deploy - INFO - You can now interact with your agent using 'python chat.py'</p>
+        
+        <div class="footer">
+            <p>Generated on 2025-04-21 09:00:32</p>
+            <p><a href="index.html">Back to Documentation Index</a></p>
+        </div>
+    </body>
+    </html>
+    

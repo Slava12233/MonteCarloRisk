@@ -1,0 +1,287 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Google ADK Agent Starter Kit - MonteCarloRisk_AI</title>
+        <link rel="stylesheet" href="style.css">
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                mermaid.initialize({
+                    startOnLoad: true,
+                    theme: 'default',
+                    securityLevel: 'loose',
+                    flowchart: { useMaxWidth: false }
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div class="navbar">
+            <h1>MonteCarloRisk_AI</h1>
+            <p><a href="index.html" style="color: white;">← Back to Documentation Index</a></p>
+        </div>
+        
+        <h1 id="google-adk-agent-starter-kit">Google ADK Agent Starter Kit</h1>
+<p>A robust, extensible starter kit for building AI agents with Google's Agent Development Kit (ADK), featuring true custom agent architecture.</p>
+<p><img alt="Google ADK" src="https://google.github.io/adk-docs/assets/images/adk-logo.png" /></p>
+<h2 id="overview">Overview</h2>
+<p>This starter kit provides a standardized foundation for building AI agents using Google's Agent Development Kit (ADK). It implements a true custom agent architecture that inherits directly from Google's BaseAgent class and follows the recommended patterns for custom agent development. The kit includes reusable components, patterns, and examples that developers can use as templates for their own agent implementations.</p>
+<h3 id="key-features">Key Features</h3>
+<ul>
+<li><strong>True Custom Agent Architecture</strong>: Inherits directly from Google's BaseAgent class and implements the required methods</li>
+<li><strong>LLM Integration</strong>: Uses Google's Gemini models for natural language understanding and generation</li>
+<li><strong>Tool Integration</strong>: Seamless integration with Google Search and custom tools</li>
+<li><strong>Flexible Orchestration</strong>: Supports complex orchestration patterns like conditional logic and state management</li>
+<li><strong>Comprehensive Testing</strong>: Includes unit tests for all components</li>
+<li><strong>Interactive Mode</strong>: Supports interactive conversations with the agent</li>
+<li><strong>Detailed Documentation</strong>: Comprehensive guidelines and best practices</li>
+</ul>
+<h2 id="getting-started">Getting Started</h2>
+<h3 id="prerequisites">Prerequisites</h3>
+<ul>
+<li>Python 3.8+</li>
+<li>Google API key for Gemini models</li>
+<li>Google Cloud project (for Vertex AI deployment)</li>
+</ul>
+<h3 id="installation">Installation</h3>
+<ol>
+<li>Clone the repository:</li>
+</ol>
+<div class="codehilite"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/your-organization/agent-starter-kit.git
+<span class="nb">cd</span><span class="w"> </span>agent-starter-kit
+</code></pre></div>
+
+<ol>
+<li>Install dependencies:</li>
+</ol>
+<div class="codehilite"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</code></pre></div>
+
+<ol>
+<li>Set up environment variables:</li>
+</ol>
+<div class="codehilite"><pre><span></span><code>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
+<span class="c1"># Edit .env with your API keys and configuration</span>
+</code></pre></div>
+
+<h3 id="quick-start">Quick Start</h3>
+<h4 id="interactive-mode">Interactive Mode</h4>
+<p>Run the base agent in interactive mode:</p>
+<div class="codehilite"><pre><span></span><code>python<span class="w"> </span>run.py<span class="w"> </span>run<span class="w"> </span>base<span class="w"> </span>--interactive
+</code></pre></div>
+
+<p>This will start an interactive session where you can chat with the agent.</p>
+<h4 id="creating-a-custom-agent">Creating a Custom Agent</h4>
+<p>To create a new agent, extend the <code>BaseAgent</code> class and implement the required methods:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">src.agents.base_agent</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseAgent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncGenerator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">override</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">google.adk.agents.invocation_context</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvocationContext</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">google.adk.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyCustomAgent</span><span class="p">(</span><span class="n">BaseAgent</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    My custom agent implementation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;my_custom_agent&quot;</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gemini-2.0-flash&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;My custom agent&quot;</span><span class="p">,</span>
+        <span class="n">instruction</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;I am a custom agent&quot;</span><span class="p">,</span>
+        <span class="c1"># ... other parameters</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span>
+            <span class="n">instruction</span><span class="o">=</span><span class="n">instruction</span><span class="p">,</span>
+            <span class="c1"># ... other parameters</span>
+        <span class="p">)</span>
+
+    <span class="nd">@override</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_run_async_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">InvocationContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncGenerator</span><span class="p">[</span><span class="n">Event</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Implement the custom orchestration logic for this agent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Implement your custom logic here</span>
+        <span class="k">async</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_llm_agent</span><span class="o">.</span><span class="n">run_async</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">event</span>
+</code></pre></div>
+
+<h2 id="project-structure">Project Structure</h2>
+<div class="codehilite"><pre><span></span><code><span class="n">MonteCarloRisk_AI</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">README</span><span class="o">.</span><span class="n">md</span><span class="w">                 </span><span class="c1"># Documentation and getting started guide</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">requirements</span><span class="o">.</span><span class="n">txt</span><span class="w">          </span><span class="c1"># Dependencies for the project</span>
+<span class="err">├──</span><span class="w"> </span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">example</span><span class="w">              </span><span class="c1"># Template for environment variables</span>
+<span class="err">├──</span><span class="w"> </span><span class="o">.</span><span class="n">env</span><span class="w">                      </span><span class="c1"># Environment variables (not in version control)</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">setup</span><span class="o">.</span><span class="n">py</span><span class="w">                  </span><span class="c1"># Package setup for distribution</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">run</span><span class="o">.</span><span class="n">py</span><span class="w">                    </span><span class="c1"># CLI entry point</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">chat</span><span class="o">.</span><span class="n">py</span><span class="w">                   </span><span class="c1"># Script to interact with deployed agent via SDK</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">direct_deploy</span><span class="o">.</span><span class="n">py</span><span class="w">          </span><span class="c1"># Streamlined script for direct deployment (recommended)</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">TASK</span><span class="o">.</span><span class="n">md</span><span class="w">                   </span><span class="c1"># Current and completed tasks</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">commands</span><span class="o">.</span><span class="n">txt</span><span class="w">              </span><span class="c1"># Useful commands for reference</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">pytest</span><span class="o">.</span><span class="n">ini</span><span class="w">                </span><span class="c1"># Configuration for pytest</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">docs</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">DOCUMENTATION_1</span><span class="o">.</span><span class="n">md</span><span class="w">    </span><span class="c1"># Comprehensive documentation</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">DIRECT_DEPLOY</span><span class="o">.</span><span class="n">md</span><span class="w">      </span><span class="c1"># Guide for direct deployment (recommended)</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">PYDANTIC_USAGE</span><span class="o">.</span><span class="n">md</span><span class="w">     </span><span class="c1"># Guidelines for using Pydantic</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">AGENT_ENGINE_DEPLOYMENT</span><span class="o">.</span><span class="n">md</span><span class="w"> </span><span class="c1"># Guide for Agent Engine deployment</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">project_visualization</span><span class="o">.</span><span class="n">html</span><span class="w"> </span><span class="c1"># Project structure visualization</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">project_visualization</span><span class="o">.</span><span class="n">md</span><span class="w">   </span><span class="c1"># Project structure in markdown</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">PLANNING</span><span class="o">.</span><span class="n">md</span><span class="w">           </span><span class="c1"># Architecture and design decisions</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">ACTION_ITEMS</span><span class="o">.</span><span class="n">md</span><span class="w">       </span><span class="c1"># Action items and improvements</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">index</span><span class="o">.</span><span class="n">md</span><span class="w">              </span><span class="c1"># Documentation index</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">backup</span><span class="o">/</span><span class="w">                   </span><span class="c1"># Backup files (ignored by git)</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">environments</span><span class="o">/</span><span class="w">             </span><span class="c1"># Environment-specific configurations</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">development</span><span class="o">.</span><span class="n">yaml</span><span class="w">      </span><span class="c1"># Development environment configuration</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">staging</span><span class="o">.</span><span class="n">yaml</span><span class="w">          </span><span class="c1"># Staging environment configuration</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">production</span><span class="o">.</span><span class="n">yaml</span><span class="w">       </span><span class="c1"># Production environment configuration</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">src</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">__init__</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">config</span><span class="o">.</span><span class="n">py</span><span class="w">             </span><span class="c1"># Configuration settings</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">cli</span><span class="o">.</span><span class="n">py</span><span class="w">                </span><span class="c1"># CLI implementation</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">registry</span><span class="o">.</span><span class="n">py</span><span class="w">           </span><span class="c1"># Agent registry for dynamic agent creation</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">agents</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">__init__</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">base_agent</span><span class="o">.</span><span class="n">py</span><span class="w">     </span><span class="c1"># Base agent implementation (includes search tool)</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">tools</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">__init__</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">custom_tools</span><span class="o">.</span><span class="n">py</span><span class="w">   </span><span class="c1"># Template for creating custom tools</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">utils</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">__init__</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">auth</span><span class="o">.</span><span class="n">py</span><span class="w">           </span><span class="c1"># Authentication utilities</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">logging</span><span class="o">.</span><span class="n">py</span><span class="w">        </span><span class="c1"># Logging configuration</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">deployment</span><span class="o">/</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">__init__</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">local</span><span class="o">.</span><span class="n">py</span><span class="w">          </span><span class="c1"># Local deployment utilities</span>
+<span class="err">│</span><span class="w">       </span><span class="err">└──</span><span class="w"> </span><span class="n">vertex</span><span class="o">.</span><span class="n">py</span><span class="w">         </span><span class="c1"># Vertex AI deployment utilities</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">examples</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">simple_search_agent</span><span class="o">.</span><span class="n">py</span><span class="w">       </span><span class="c1"># Basic search agent example</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">multi_tool_agent</span><span class="o">.</span><span class="n">py</span><span class="w">          </span><span class="c1"># Example with multiple tools</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">streaming_agent</span><span class="o">.</span><span class="n">py</span><span class="w">           </span><span class="c1"># Example with streaming capabilities</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">tests</span><span class="o">/</span>
+<span class="w">    </span><span class="err">├──</span><span class="w"> </span><span class="n">__init__</span><span class="o">.</span><span class="n">py</span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="n">test_custom_tools</span><span class="o">.</span><span class="n">py</span><span class="w">         </span><span class="c1"># Tests for custom tools</span>
+</code></pre></div>
+
+<blockquote>
+<p>Note: Some additional files like .git/, .coverage, .pytest_cache/, and venv/ are excluded from this structure as they are generated files or directories.</p>
+</blockquote>
+<h2 id="key-components">Key Components</h2>
+<h3 id="baseagent">BaseAgent</h3>
+<p>The <code>BaseAgent</code> class is the foundation of our agent architecture. It inherits directly from Google's <code>BaseAgent</code> class and implements the required methods for custom agent development.</p>
+<p>Key features:
+- Implements <code>_run_async_impl</code> for custom orchestration logic
+- Manages sub-agents, including an LlmAgent for reasoning
+- Handles session management and state
+- Provides convenience methods for running the agent and getting responses
+- Uses a hybrid approach for Pydantic with validation methods</p>
+<h3 id="custom-tools">Custom Tools</h3>
+<p>The starter kit includes support for custom tools that can be used by agents to perform specific tasks.</p>
+<p>Key features:
+- Implements a <code>CustomTool</code> class for creating new tools
+- Provides examples of custom tool implementation
+- Includes unit tests for custom tools</p>
+<h2 id="running-the-agent">Running the Agent</h2>
+<h3 id="interactive-mode_1">Interactive Mode</h3>
+<p>Run the base agent in interactive mode:</p>
+<div class="codehilite"><pre><span></span><code>python<span class="w"> </span>run.py<span class="w"> </span>run<span class="w"> </span>base<span class="w"> </span>--interactive
+</code></pre></div>
+
+<p>This will start an interactive session where you can chat with the agent.</p>
+<h3 id="deployment">Deployment</h3>
+<h4 id="local-development-web-ui">Local Development Web UI</h4>
+<p>For local development and testing with a web interface:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Ensure GOOGLE_API_KEY or DEV_MODE=TRUE is set in your environment/.env</span>
+python<span class="w"> </span>run.py<span class="w"> </span>run<span class="w"> </span>base<span class="w"> </span>--web<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span>
+</code></pre></div>
+
+<p>Access the interface at <code>http://localhost:8000</code>. <em>(Note: If the page shows ERR_EMPTY_RESPONSE despite the server starting, check browser developer console for errors).</em></p>
+<h4 id="vertex-ai-agent-engine-deployment">Vertex AI Agent Engine Deployment</h4>
+<p>For deploying to Vertex AI Agent Engine:</p>
+<h5 id="using-direct_deploypy-recommended-method">Using direct_deploy.py (Recommended Method)</h5>
+<p>The simplest and most reliable deployment method:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Ensure your .env file has GOOGLE_CLOUD_PROJECT and STAGING_BUCKET set</span>
+python<span class="w"> </span>direct_deploy.py
+</code></pre></div>
+
+<p>This streamlined script:
+- Reads configuration from environment variables
+- Creates and tests the agent locally
+- Deploys to Vertex AI Agent Engine
+- Automatically updates chat.py with the new Agent Engine ID
+- Creates a backup of the original chat.py file</p>
+<p>See <code>docs/DIRECT_DEPLOY.md</code> for full details and environment variable configuration.</p>
+<h5 id="using-deploy_agent_enginepy-alternative-method">Using deploy_agent_engine.py (Alternative Method)</h5>
+<p>For deployments with complex configuration requirements:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Ensure environments/your_env.yaml is configured with project_id, etc.</span>
+<span class="c1"># Ensure you have run &#39;gcloud auth application-default login&#39;</span>
+python<span class="w"> </span>deploy_agent_engine.py<span class="w"> </span>--environment<span class="w"> </span>&lt;your_env&gt;<span class="w"> </span>--staging-bucket<span class="w"> </span>gs://your-bucket-name
+</code></pre></div>
+
+<p>For redeploying after making changes to the codebase, you can use the automated redeployment script:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># This script handles both deployment and updating chat.py with the new Agent Engine ID</span>
+python<span class="w"> </span>redeploy.py<span class="w"> </span>--environment<span class="w"> </span>&lt;your_env&gt;
+</code></pre></div>
+
+<p>The deployment scripts read configuration values from your <code>.env</code> file:
+- <code>GOOGLE_CLOUD_PROJECT</code>
+- <code>STAGING_BUCKET</code>
+- <code>GOOGLE_CLOUD_REGION</code></p>
+<p>You can also override these values with command-line arguments.</p>
+<p>See <code>docs/AGENT_ENGINE_DEPLOYMENT.md</code> for full details and troubleshooting.</p>
+<h4 id="interacting-with-deployed-agent">Interacting with Deployed Agent</h4>
+<p>Use the <code>chat.py</code> script to interact with the agent deployed on Vertex AI Agent Engine via the Python SDK:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># The direct_deploy.py and redeploy.py scripts automatically update chat.py</span>
+python<span class="w"> </span>chat.py
+</code></pre></div>
+
+<h2 id="documentation">Documentation</h2>
+<p>For more detailed documentation, see:</p>
+<ul>
+<li><a href="docs/index.md">Documentation Index</a> - Central index of all documentation resources.</li>
+<li><a href="docs/DIRECT_DEPLOY.md">Direct Deployment Guide</a> - Guide for the recommended deployment method.</li>
+<li><a href="docs/AGENT_ENGINE_DEPLOYMENT.md">Agent Engine Deployment Guide</a> - Comprehensive guide for Vertex AI Agent Engine deployment.</li>
+<li><a href="docs/PLANNING.md">Planning Document</a> - Project architecture and design decisions.</li>
+<li><a href="TASK.md">Task List</a> - Current and completed tasks.</li>
+<li><a href="docs/PYDANTIC_USAGE.md">Pydantic Usage Guidelines</a> - Guidelines for using Pydantic in agent classes.</li>
+<li><a href="https://cloud.google.com/vertex-ai/docs/agent-development-kit/overview">Google ADK Documentation</a> - Official ADK documentation.</li>
+<li><a href="docs/ACTION_ITEMS.md">Action Items</a> - Action items and improvements for the project.
+<em>(Other files in <code>docs/</code> may contain historical or specific reports)</em></li>
+</ul>
+<h2 id="pydantic-usage">Pydantic Usage</h2>
+<p>This project uses a hybrid approach for Pydantic integration in agent classes:</p>
+<ol>
+<li>
+<p><strong>Model Configuration</strong>: All agent classes define <code>model_config = {"arbitrary_types_allowed": True}</code> to allow non-Pydantic types.</p>
+</li>
+<li>
+<p><strong>Validation Methods</strong>: Instead of using Pydantic fields directly, we use validation methods like <code>_validate_model()</code> and <code>_validate_tools()</code> to validate inputs.</p>
+</li>
+<li>
+<p><strong>Private Attributes</strong>: Parameters are stored as instance attributes with leading underscores to indicate they are "private".</p>
+</li>
+</ol>
+<p>This approach provides several benefits:
+- Maintains compatibility with the ADK's BaseAgent class
+- Allows for explicit validation of inputs
+- Follows Python conventions for private attributes
+- Simplifies the code structure</p>
+<p>For more details, see the <a href="docs/PYDANTIC_USAGE.md">Pydantic Usage Guidelines</a>.</p>
+<h2 id="contributing">Contributing</h2>
+<p>Contributions are welcome! Please see <a href="CONTRIBUTING.md">CONTRIBUTING.md</a> for guidelines.</p>
+<h2 id="license">License</h2>
+<p>This project is licensed under the Apache 2.0 License - see the <a href="LICENSE">LICENSE</a> file for details.</p>
+        
+        <div class="footer">
+            <p>Generated on 2025-04-21 09:00:31</p>
+            <p><a href="index.html">Back to Documentation Index</a></p>
+        </div>
+    </body>
+    </html>
+    

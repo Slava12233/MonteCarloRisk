@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 # Load environment variables from .env file
 load_dotenv()
 
-from src.agents.search_agent import SearchAgent
+from src.agents.base_agent import BaseAgent # Changed import
 from src.tools.custom_tools import create_custom_tool, CustomToolBuilder
 from src.utils.logging import configure_logging
 
@@ -56,11 +56,12 @@ calculator_tool = (
 
 def main():
     """Run the multi-tool agent example."""
-    logger.info("Starting Multi-Tool Agent Example")
+    logger.info("Starting Multi-Tool Base Agent Example")
 
-    # Create a search agent with additional tools
-    agent = SearchAgent(
-        name="multi_tool_agent",
+    # Create a base agent with additional tools
+    # Note: The 'base' agent registration already includes google_search
+    agent = BaseAgent(
+        name="multi_tool_base_agent",
         description="An agent that can search the web and use custom tools.",
         instruction="""I can answer your questions by searching the internet and using custom tools.
         
@@ -86,8 +87,8 @@ Just ask me anything!""",
     for query in example_queries:
         logger.info(f"Query: {query}")
         
-        # Run the agent
-        response = agent.search(query)
+        # Run the agent and get the final response
+        response = agent.run_and_get_response(user_id="example_user", session_id="example_session", message=query)
         
         # Print the response
         print(f"\nQuery: {query}")
@@ -99,9 +100,10 @@ def interactive_mode():
     """Run the agent in interactive mode."""
     logger.info("Starting Interactive Mode")
 
-    # Create a search agent with additional tools
-    agent = SearchAgent(
-        name="interactive_multi_tool_agent",
+    # Create a base agent with additional tools
+    # Note: The 'base' agent registration already includes google_search
+    agent = BaseAgent(
+        name="interactive_multi_tool_base_agent",
         description="An agent that can search the web and use custom tools.",
         instruction="""I can answer your questions by searching the internet and using custom tools.
         
@@ -134,8 +136,8 @@ Just ask me anything!""",
             print("Goodbye!")
             break
         
-        # Run the agent
-        response = agent.search(query, session_id=session_id)
+        # Run the agent and get the final response
+        response = agent.run_and_get_response(user_id="interactive_user", session_id=session_id, message=query)
         
         # Print the response
         print(f"\nAgent: {response}")

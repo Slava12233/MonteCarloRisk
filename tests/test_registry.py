@@ -128,19 +128,4 @@ def test_list_agent_types(clear_registry, mock_agent_factory):
     assert "test2" in agent_types
     assert len(agent_types) == 2
 
-
-def test_built_in_search_agent(clear_registry):
-    """Test that the built-in search agent is registered."""
-    # Re-register the search agent (since we cleared the registry in setUp)
-    from src.agents.search_agent import SearchAgent
-    
-    def _create_search_agent(**kwargs):
-        return SearchAgent(**kwargs)
-    
-    register_agent_type("search", _create_search_agent)
-    
-    # List the agent types
-    agent_types = list_agent_types()
-    
-    # Check that the search agent is registered
-    assert "search" in agent_types
+# Removed test_built_in_search_agent as SearchAgent was removed

@@ -104,23 +104,30 @@ def list_agent_types() -> list:
 
 
 # Register built-in agent types
-from .agents.search_agent import SearchAgent
+from .agents.base_agent import BaseAgent # Import BaseAgent
+# Removed: from .agents.search_agent import SearchAgent
+from google.adk.tools import google_search # Import the search tool
 
-def _create_search_agent(
+def _create_base_agent(
     name: Optional[str] = None,
     model: Optional[str] = None,
     description: Optional[str] = None,
     instruction: Optional[str] = None,
     **kwargs
-) -> SearchAgent:
-    """Factory function for creating a search agent."""
-    return SearchAgent(
-        name=name or "search_agent",
-        model=model,
-        description=description or "A search agent that can answer questions using Google Search.",
-        instruction=instruction or "I can answer your questions by searching the internet. Just ask me anything!",
+) -> BaseAgent:
+    """Factory function for creating a base agent."""
+    # Note: BaseAgent might require specific tools or config depending on usage
+    return BaseAgent(
+        name=name or "base_agent", # Give it a default name
+        model=model, # Pass through model if provided
+        description=description or "A generic base agent.", # Default description
+        instruction=instruction or "I am a base agent.", # Default instruction
+        tools=[google_search], # Add the google_search tool
         **kwargs
     )
 
-# Register the search agent type
-register_agent_type("search", _create_search_agent)
+# Removed _create_search_agent function
+
+# Register the agent types
+register_agent_type("base", _create_base_agent)
+# Removed: register_agent_type("search", _create_search_agent)

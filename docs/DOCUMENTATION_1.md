@@ -46,7 +46,7 @@ Our starter kit follows a layered architecture that separates concerns and promo
                 │
 ┌───────────────▼─────────────────────────┐
 │             Agent Layer                 │
-│  (BaseAgent, SearchAgent, etc.)         │
+│  (BaseAgent, etc.)                      │
 └───────────────┬─────────────────────────┘
                 │
 ┌───────────────▼─────────────────────────┐
@@ -83,15 +83,6 @@ Key features:
 - Manages sub-agents, including an LlmAgent for reasoning
 - Handles session management and state
 - Provides convenience methods for running the agent and getting responses
-
-### SearchAgent
-
-The `SearchAgent` class extends `BaseAgent` to provide a specialized agent that can search the web using Google Search to answer questions.
-
-Key features:
-- Integrates with Google Search tool
-- Implements custom orchestration logic for search queries
-- Provides a convenient `search` method for direct use
 
 ### Custom Tools
 
@@ -189,66 +180,6 @@ class BaseAgent(ADKBaseAgent):
         logger.info(f"[{self.name}] Agent execution completed")
 ```
 
-### SearchAgent Implementation
-
-The `SearchAgent` class extends `BaseAgent` to provide a specialized agent that can search the web using Google Search:
-
-```python
-class SearchAgent(BaseAgent):
-    """
-    Search agent implementation using Google Search.
-
-    This class extends the BaseAgent to provide a specialized agent that can
-    search the web using Google Search to answer questions.
-    """
-
-    def __init__(
-        self,
-        name: str = "search_agent",
-        model: str = "gemini-2.0-flash",
-        description: str = "Agent to answer questions using Google Search.",
-        instruction: str = "I can answer your questions by searching the internet. Just ask me anything!",
-        session_service: Optional[Any] = None,
-        app_name: Optional[str] = None,
-        additional_tools: Optional[List[Any]] = None,
-    ):
-        # Combine Google Search with any additional tools
-        tools = [google_search]
-        if additional_tools:
-            tools.extend(additional_tools)
-
-        super().__init__(
-            name=name,
-            model=model,
-            description=description,
-            instruction=instruction,
-            tools=tools,
-            session_service=session_service,
-            app_name=app_name,
-        )
-
-    @override
-    async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:
-        """
-        Implement the custom orchestration logic for this search agent.
-        
-        This method simply delegates to the LLM agent, which has access to the Google Search tool.
-        """
-        # For a simple search agent, we just delegate to the LLM agent
-        async for event in self._llm_agent.run_async(ctx):
-            yield event
-
-    def search(self, query: str, user_id: str = "user", session_id: str = "session") -> str:
-        """
-        Search for information using Google Search.
-
-        This is a convenience method that runs the agent with a query and returns
-        the final response.
-        """
-        response = self.run_and_get_response(user_id, session_id, query)
-        return response or "No response from the agent."
-```
-
 ### Custom Tools Implementation
 
 The starter kit includes support for custom tools:
@@ -310,14 +241,78 @@ def get_random_number(min_value: int = 0, max_value: int = 100) -> int:
    # Edit .env with your API keys and configuration
    ```
 
+### Project Structure
+
+The project follows a modular structure designed for extensibility:
+
+```
+google-adk-agent-starter-kit/
+├── README.md                 # Documentation and getting started guide
+├── requirements.txt          # Dependencies
+├── .env.example              # Template for environment variables
+├── .env                      # Environment variables (not in version control)
+├── setup.py                  # Package setup for distribution
+├── run.py                    # CLI entry point
+├── chat.py                   # Script to interact with deployed agent via SDK
+├── deploy_agent_engine.py    # Script for Vertex AI Agent Engine deployment
+├── deployment_config.yaml    # Base configuration for deployment
+├── environments/             # Environment-specific configurations
+│   ├── development.yaml      # Development environment configuration
+│   ├── staging.yaml          # Staging environment configuration
+│   └── production.yaml       # Production environment configuration
+├── docs/
+│   ├── DOCUMENTATION_1.md    # This document (comprehensive documentation)
+│   ├── PLANNING.md           # Architecture and planning document
+│   ├── PYDANTIC_USAGE.md     # Guidelines for using Pydantic
+│   ├── AGENT_ENGINE_DEPLOYMENT.md # Guide for Agent Engine deployment
+│   ├── project_visualization.html # Project structure visualization
+│   ├── project_visualization.md   # Project structure in markdown
+│   └── ACTION_ITEMS.md       # Action items and improvements
+├── src/
+│   ├── __init__.py
+│   ├── config.py             # Configuration settings
+│   ├── cli.py                # CLI implementation
+│   ├── registry.py           # Agent registry for dynamic agent creation
+│   ├── agents/
+│   │   ├── __init__.py
+│   │   └── base_agent.py     # Base agent implementation (includes search tool)
+│   ├── tools/
+│   │   ├── __init__.py
+│   │   └── custom_tools.py   # Template for creating custom tools
+│   ├── utils/
+│   │   ├── __init__.py
+│   │   ├── auth.py           # Authentication utilities
+│   │   └── logging.py        # Logging configuration
+│   └── deployment/
+│       ├── __init__.py
+│       ├── local.py          # Local deployment utilities
+│       └── vertex.py         # Vertex AI deployment utilities
+├── examples/
+│   ├── simple_search_agent.py       # Basic search agent example
+│   ├── multi_tool_agent.py          # Example with multiple tools
+│   └── streaming_agent.py           # Example with streaming capabilities
+└── tests/
+    ├── __init__.py
+    └── test_custom_tools.py         # Tests for custom tools
+```
+
+Key files and directories:
+
+1. **run.py**: Entry point for running agents via CLI
+2. **chat.py**: Script for interacting with agents deployed on Vertex AI Agent Engine
+3. **deploy_agent_engine.py**: Script for deploying agents to Vertex AI Agent Engine
+4. **src/registry.py**: Registry for agent types, allowing dynamic agent creation
+5. **src/agents/base_agent.py**: Base agent implementation that inherits from Google's BaseAgent
+6. **src/tools/custom_tools.py**: Templates and utilities for creating custom tools
+
 ### Running the Agent
 
 #### Interactive Mode
 
-Run the agent in interactive mode:
+Run the base agent in interactive mode:
 
 ```bash
-python run.py run search --interactive
+python run.py run base --interactive
 ```
 
 This will start an interactive session where you can chat with the agent.
@@ -327,17 +322,17 @@ This will start an interactive session where you can chat with the agent.
 You can also use the agent programmatically in your code:
 
 ```python
-from src.agents.search_agent import SearchAgent
+from src.agents.base_agent import BaseAgent # Use BaseAgent now
 
-# Create a search agent
-agent = SearchAgent(
-    name="my_search_agent",
-    description="My custom search agent",
+# Create a base agent (includes search tool via registry)
+agent = BaseAgent(
+    name="my_base_agent",
+    description="My custom base agent with search",
     instruction="Answer questions using Google Search",
 )
 
-# Search for information
-response = agent.search("What is the capital of France?")
+# Run the agent
+response = agent.run_and_get_response(user_id="prog_user", session_id="prog_session", message="What is the capital of France?")
 print(response)
 ```
 
@@ -512,9 +507,9 @@ python run.py run search --interactive
 
 For production deployment, you can deploy the agent to Vertex AI using one of two approaches:
 
-#### Option 1: Vertex AI Endpoint Deployment
+#### Option 1: Vertex AI Endpoint Deployment (Alternative)
 
-This option deploys the agent as a Vertex AI endpoint using the traditional approach:
+This option deploys the agent as a Vertex AI endpoint using the traditional approach via `deploy.py`:
 
 1. Set up your Google Cloud project:
    ```bash
@@ -530,6 +525,7 @@ This option deploys the agent as a Vertex AI endpoint using the traditional appr
    ```bash
    python deploy.py --vertex --environment production
    ```
+*(Note: This uses a different deployment script and method than Agent Engine)*
 
 #### Option 2: Vertex AI Agent Engine Deployment (Recommended)
 
@@ -555,7 +551,7 @@ This option deploys the agent to Vertex AI Agent Engine, which is a fully manage
    python deploy_agent_engine.py --environment production --staging-bucket gs://your-bucket-name
    ```
 
-For detailed instructions on deploying to Agent Engine, see the [Agent Engine Deployment Guide](AGENT_ENGINE_DEPLOYMENT.md).
+For detailed instructions on deploying to Agent Engine, see the [Agent Engine Deployment Guide](docs/AGENT_ENGINE_DEPLOYMENT.md).
 
 ## Best Practices
 
@@ -671,6 +667,15 @@ logger.debug(f"Session state: {ctx.session.state}")
 
 ## References
 
+### Project Documentation
+
+- [README.md](../README.md) - Overview and getting started guide
+- [PLANNING.md](PLANNING.md) - Architecture, design decisions, and development roadmap
+- [PYDANTIC_USAGE.md](PYDANTIC_USAGE.md) - Guidelines for using Pydantic in agent classes
+- [AGENT_ENGINE_DEPLOYMENT.md](AGENT_ENGINE_DEPLOYMENT.md) - Guide for deploying to Vertex AI Agent Engine
+- [ACTION_ITEMS.md](ACTION_ITEMS.md) - Action items and improvements for the project
+- [TASK.md](../TASK.md) - Current and completed tasks
+
 ### Google ADK Documentation
 
 - [Google ADK Overview](https://cloud.google.com/vertex-ai/docs/agent-development-kit/overview)
@@ -695,33 +700,49 @@ logger.debug(f"Session state: {ctx.session.state}")
 
 This documentation provides a comprehensive guide to our Google ADK Agent Starter Kit. It covers the architecture, implementation details, usage instructions, and best practices for building intelligent agents using Google's Agent Development Kit.
 
-As we continue to develop and enhance this starter kit, we'll update this documentation to reflect new features and improvements. If you have any questions or feedback, please don't hesitate to reach out to the development team.
+This document works in conjunction with the `PLANNING.md` file, which provides a more focused view of the architecture, design decisions, and roadmap. While this document provides comprehensive details on implementation and usage, `PLANNING.md` offers a higher-level strategic overview that can be useful for new team members and for making architectural decisions.
+
+As we continue to develop and enhance this starter kit, we'll update both this documentation and the related documentation files to reflect new features and improvements. If you have any questions or feedback, please don't hesitate to reach out to the development team.
 
 Happy agent building!
 
 ---
 
-*Document Version: 1.1*  
-*Last Updated: April 21, 2025*  
+*Document Version: 1.2*  
+*Last Updated: April 22, 2025*  
 *Author: [Your Name], CTO*
 
 ## Recent Updates
 
 The following improvements have been made to the Google ADK Agent Starter Kit:
 
-1. **Fixed Vertex AI Deployment Mechanism**: The Vertex AI deployment mechanism has been completely redesigned to correctly package and instantiate our custom agent classes. The `prepare_deployment_package` function in `src/deployment/vertex.py` now properly includes the source code in the deployment package and generates a `main.py` file that correctly imports and instantiates our `SearchAgent` class.
+1. **Creation of Consolidated Planning Document**: A new `PLANNING.md` document has been created to serve as a centralized reference for the project's architecture, design decisions, and roadmap. This document complements the comprehensive information in this documentation file.
 
-2. **Improved CLI Extensibility**: The CLI has been refactored to use a registry pattern for agent types, making it easier to add new agent types without modifying the CLI code directly. A new `registry.py` module has been added that provides functions for registering and retrieving agent types.
+2. **Fixed Vertex AI Agent Engine Deployment**: Fixed deployment to Vertex AI Agent Engine by adding `extra_packages=['./src']` to the `agent_engines.create` call in `deploy_agent_engine.py`. Also created `chat.py` to interact with the deployed agent via the Python SDK due to lack of Console UI and `gcloud` support.
 
-3. **Refactored Local Deployment UI**: The local deployment UI has been refactored to use static HTML templates and separate CSS and JavaScript files, improving maintainability and separation of concerns. The UI now has a more modern look and feel with responsive design elements.
+3. **Updated Project Documentation**: Updated README.md and other documentation to reflect the current project structure and removed references to non-existent files.
 
-4. **Standardized Pydantic Usage**: We've implemented a hybrid approach for Pydantic usage in agent classes. This approach uses validation methods like `_validate_model()` and `_validate_tools()` to validate inputs, while maintaining compatibility with the ADK's BaseAgent class. See the [Pydantic Usage Guidelines](PYDANTIC_USAGE.md) for more details.
+4. **Fixed Vertex AI Deployment Mechanism**: The Vertex AI deployment mechanism (for standard endpoints via `deploy.py`) was redesigned to correctly package and instantiate custom agent classes. *(Note: This is separate from the Agent Engine deployment fix)*.
 
-5. **Migrated Tests to pytest**: All tests have been migrated from unittest to pytest, improving test readability and maintainability. The test suite now uses fixtures for common test scenarios and assertions use the pytest style. See the [Test Report](TEST_REPORT.md) for more details.
+5. **Improved CLI Extensibility**: The CLI was refactored to use a registry pattern (`src/registry.py`) for agent types, making it easier to add new agent types without modifying the CLI code directly.
 
-6. **Improved Port Handling in Local Deployment**: The local deployment mechanism now handles the case where the default port is already in use by automatically trying the next available port.
+6. **Refactored Local Deployment UI**: The local deployment UI has been refactored to use static HTML templates and separate CSS and JavaScript files, improving maintainability and separation of concerns. The UI now has a more modern look and feel with responsive design elements.
+
+7. **Standardized Pydantic Usage**: We've implemented a hybrid approach for Pydantic usage in agent classes. This approach uses validation methods like `_validate_model()` and `_validate_tools()` to validate inputs, while maintaining compatibility with the ADK's BaseAgent class. See the [Pydantic Usage Guidelines](PYDANTIC_USAGE.md) for more details.
+
+8. **Migrated Tests to pytest**: All tests have been migrated from unittest to pytest, improving test readability and maintainability. The test suite now uses fixtures for common test scenarios and assertions use the pytest style. See the [Test Report](TEST_REPORT.md) for more details.
+
+9. **Improved Port Handling in Local Deployment**: The local deployment mechanism now handles the case where the default port is already in use by automatically trying the next available port.
 
 These improvements address the issues identified in the code review report and make the starter kit more robust and extensible.
+
+## Documentation Resources
+
+For additional information about the project, please refer to the following resources:
+
+- [PLANNING.md](PLANNING.md) - A consolidated reference for the project's architecture, design decisions, and development roadmap.
+- [PYDANTIC_USAGE.md](PYDANTIC_USAGE.md) - Guidelines for using Pydantic in agent classes.
+- [AGENT_ENGINE_DEPLOYMENT.md](AGENT_ENGINE_DEPLOYMENT.md) - Detailed guide for deploying to Vertex AI Agent Engine.
 
 ## Pydantic Usage
 

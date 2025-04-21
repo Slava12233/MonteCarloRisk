@@ -44,26 +44,6 @@ class BaseAgent(ADKBaseAgent):
         # ...
 ```
 
-#### SearchAgent Class
-
-```python
-class SearchAgent(BaseAgent):
-    # Define model_config for Pydantic
-    model_config = {"arbitrary_types_allowed": True}
-
-    def __init__(
-        self,
-        name: str = "search_agent",
-        model: str = "gemini-2.0-flash",
-        description: str = "Agent to answer questions using Google Search.",
-        instruction: str = "I can answer your questions by searching the internet. Just ask me anything!",
-        session_service: Optional[Any] = None,
-        app_name: Optional[str] = None,
-        additional_tools: Optional[List[Any]] = None,
-    ):
-        # ...
-```
-
 ### Observations
 
 1. Both classes define `model_config = {"arbitrary_types_allowed": True}` to allow non-Pydantic types.
@@ -237,10 +217,9 @@ This approach strikes a balance between leveraging Pydantic's capabilities and m
 
 ## Implementation Plan
 
-1. **Update BaseAgent**: Implement the hybrid approach in the BaseAgent class.
-2. **Update SearchAgent**: Ensure SearchAgent follows the same pattern.
-3. **Documentation**: Add docstrings explaining the validation methods.
-4. **Testing**: Update tests to verify validation logic.
+1. **Update BaseAgent**: Implement the hybrid approach in the BaseAgent class. (Done)
+2. **Documentation**: Add docstrings explaining the validation methods.
+3. **Testing**: Update tests to verify validation logic.
 
 ## Future Considerations
 

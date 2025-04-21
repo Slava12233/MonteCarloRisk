@@ -80,7 +80,7 @@ graph TD
 The project follows a standard Python package structure:
 
 ```
-google-adk-agent-starter-kit/
+MonteCarloRisk_AI/
 ├── .env                  # Environment variables (local, not committed)
 ├── .env.example          # Example environment variables
 ├── .gitignore            # Git ignore rules
@@ -88,15 +88,26 @@ google-adk-agent-starter-kit/
 ├── README.md             # Project overview and setup guide
 ├── requirements.txt      # Python dependencies
 ├── run.py                # Main CLI entry point
+├── chat.py               # Script to interact with deployed agent via SDK
+├── direct_deploy.py      # Streamlined script for direct deployment (recommended)
+├── commands.txt          # Useful commands for reference
+├── TASK.md               # Current and completed tasks
+├── backup/               # Backup directory (ignored by git)
 ├── setup.py              # Package setup for distribution
 ├── docs/                 # Documentation files
-│   ├── ACTION_ITEMS.md
-│   ├── CODE_REVIEW_REPORT_1.md
+│   ├── ACTION_ITEMS.md   # Action items and improvements
 │   ├── DOCUMENTATION_1.md  # Detailed project documentation
-│   ├── PLANNING_1.md       # Architecture and planning
+│   ├── PLANNING.md         # Architecture and planning document
 │   ├── PYDANTIC_USAGE.md   # Pydantic guidelines
-│   ├── TASKS_1.md          # Task tracking
-│   └── TEST_REPORT.md
+│   ├── AGENT_ENGINE_DEPLOYMENT.md # Guide for deploying to Agent Engine
+│   ├── DIRECT_DEPLOY.md    # Guide for direct deployment (recommended)
+│   ├── project_visualization.html # This document in HTML format
+│   ├── project_visualization.md   # This document
+│   └── index.md          # Central documentation index
+├── environments/         # Environment-specific configurations
+│   ├── development.yaml  # Development environment configuration
+│   ├── staging.yaml      # Staging environment configuration
+│   └── production.yaml   # Production environment configuration
 ├── examples/             # Example agent usage scripts
 │   ├── __init__.py
 │   ├── multi_tool_agent.py
@@ -104,13 +115,12 @@ google-adk-agent-starter-kit/
 │   └── streaming_agent.py
 ├── src/                  # Source code directory
 │   ├── __init__.py
-│   ├── cli.py            # Command Line Interface implementation (using Typer/Click)
+│   ├── cli.py            # Command Line Interface implementation
 │   ├── config.py         # Configuration loading (from .env)
 │   ├── registry.py       # Agent type registry
 │   ├── agents/           # Agent implementations
 │   │   ├── __init__.py
-│   │   ├── base_agent.py # Core base agent class
-│   │   └── search_agent.py # Example search agent
+│   │   └── base_agent.py # Core base agent class (includes search capability)
 │   ├── deployment/       # Deployment utilities
 │   │   ├── __init__.py
 │   │   ├── local.py      # Local FastAPI server deployment
@@ -125,15 +135,12 @@ google-adk-agent-starter-kit/
 │   │   └── custom_tools.py # Custom tool creation utilities & examples
 │   └── utils/            # Utility modules
 │       ├── __init__.py
-│       ├── auth.py       # Authentication helpers (Placeholder/Basic)
+│       ├── auth.py       # Authentication helpers
 │       └── logging.py    # Logging setup
 └── tests/                # Unit and integration tests (Pytest)
     ├── __init__.py
     ├── test_custom_tools.py
-    ├── test_local.py
-    ├── test_registry.py
-    ├── test_search_agent.py
-    └── test_vertex.py
+    └── test_registry.py
 ```
 
 ---
@@ -190,37 +197,43 @@ class BaseAgent(ADKBaseAgent):
         logger.info(f"[{self.name}] Agent execution completed")
 ```
 
-### 4.2. SearchAgent (`src/agents/search_agent.py`)
+### 4.2. Registry System (`src/registry.py`)
 
-An example agent specializing in using Google Search.
+A mechanism for registering and creating different types of agents dynamically.
 
-*   **Inheritance**: Extends `BaseAgent`.
-*   **Functionality**: Designed to answer questions by searching the internet.
-*   **Initialization (`__init__`)**:
-    *   Adds the built-in `google_search` tool from `google.adk.tools` to the list of tools.
-    *   Allows passing `additional_tools`.
-    *   Calls the parent `BaseAgent.__init__` with the combined tool list.
-*   **Orchestration (`_run_async_impl`)**: Inherits the default behavior from `BaseAgent`, which delegates to the `LlmAgent`. The `LlmAgent` automatically uses the provided tools (including `google_search`) when appropriate based on the instruction and user query.
-*   **Convenience Method (`search`)**: Provides a simple synchronous method to run a query and get the final text response.
+*   **Purpose**: Decouples agent creation from the code that uses agents (like the CLI). Allows adding new agent types without modifying the core CLI logic.
+*   **Functionality**:
+    *   `register_agent_type(type_name, factory_function)`: Adds an agent type and its creation function.
+    *   `get_agent_factory(type_name)`: Retrieves the factory function.
+    *   `create_agent(type_name, **kwargs)`: Creates an agent instance using its factory.
+    *   `list_agent_types()`: Returns available agent types.
+*   **Usage**: Uses factory functions to create agents. The CLI (`src/cli.py`) uses this registry to know which agents it can run.
 
 ```python
-# Simplified __init__ from src/agents/search_agent.py
-from google.adk.tools import google_search
+# Simplified usage from src/registry.py
+_agent_registry: Dict[str, AgentFactory] = {}
 
-class SearchAgent(BaseAgent):
-    def __init__(self, name: str = "search_agent", ..., additional_tools: Optional[List[Any]] = None):
-        tools = [google_search]
-        if additional_tools:
-            tools.extend(additional_tools)
+def register_agent_type(agent_type: str, factory: AgentFactory) -> None:
+    _agent_registry[agent_type] = factory
 
-        super().__init__(
-            name=name,
-            # ...,
-            tools=tools,
-            # ...
-        )
+def create_agent(agent_type: str, **kwargs) -> Any:
+    factory = get_agent_factory(agent_type)
+    return factory(**kwargs)
 
-    # _run_async_impl is inherited from BaseAgent
+# Registering BaseAgent
+from .agents.base_agent import BaseAgent
+def _create_base_agent(**kwargs) -> BaseAgent:
+    # Note: BaseAgent might require specific tools or config depending on usage
+    return BaseAgent(
+        name=kwargs.get('name', 'base_agent'),
+        model=kwargs.get('model'),
+        description=kwargs.get('description', 'A generic base agent.'),
+        instruction=kwargs.get('instruction', 'I am a base agent.'),
+        tools=[google_search], # Add the google_search tool
+        **kwargs
+    )
+
+register_agent_type("base", _create_base_agent)
 ```
 
 ### 4.3. Tools (`src/tools/custom_tools.py`, `google.adk.tools`)
@@ -259,37 +272,7 @@ current_time_tool = FunctionTool(get_current_time)
 # current_time_tool = create_custom_tool(get_current_time)
 ```
 
-### 4.4. Agent Registry (`src/registry.py`)
-
-A mechanism for registering and creating different types of agents dynamically.
-
-*   **Purpose**: Decouples agent creation from the code that uses agents (like the CLI). Allows adding new agent types without modifying the core CLI logic.
-*   **Functionality**:
-    *   `register_agent_type(type_name, factory_function)`: Adds an agent type and its creation function.
-    *   `get_agent_factory(type_name)`: Retrieves the factory function.
-    *   `create_agent(type_name, **kwargs)`: Creates an agent instance using its factory.
-    *   `list_agent_types()`: Returns available agent types.
-*   **Usage**: The `SearchAgent` is registered by default. The CLI (`src/cli.py`) uses this registry to know which agents it can run.
-
-```python
-# Simplified usage from src/registry.py
-_agent_registry: Dict[str, AgentFactory] = {}
-
-def register_agent_type(agent_type: str, factory: AgentFactory) -> None:
-    _agent_registry[agent_type] = factory
-
-def create_agent(agent_type: str, **kwargs) -> Any:
-    factory = get_agent_factory(agent_type)
-    return factory(**kwargs)
-
-# Registering SearchAgent
-from .agents.search_agent import SearchAgent
-def _create_search_agent(**kwargs) -> SearchAgent:
-    return SearchAgent(**kwargs)
-register_agent_type("search", _create_search_agent)
-```
-
-### 4.5. Configuration (`src/config.py`)
+### 4.4. Configuration (`src/config.py`)
 
 Manages application settings using environment variables.
 
@@ -298,7 +281,7 @@ Manages application settings using environment variables.
 *   **Access**: Provides a `get_config()` function to retrieve settings as a dictionary.
 *   **Validation**: Includes a `validate_config()` function to check for required settings based on the mode (Vertex AI vs API Key).
 
-### 4.6. Deployment (`src/deployment/`)
+### 4.5. Deployment (`src/deployment/`, `direct_deploy.py`, `deploy_agent_engine.py`)
 
 Handles running the agent locally or deploying to Vertex AI.
 
@@ -307,25 +290,50 @@ Handles running the agent locally or deploying to Vertex AI.
     *   Provides a simple WebSocket-based chat interface (HTML/CSS/JS in `static/` and `templates/`).
     *   Handles multiple sessions.
     *   Manages port conflicts by trying subsequent ports if the default is busy.
+
 *   **Vertex AI Endpoint (`vertex.py`)**:
     *   Contains helper functions (`prepare_deployment_package`, `deploy_to_vertex_ai`) to package the agent source code and deploy it as a Vertex AI Endpoint.
     *   Generates a `main.py` entry point for the Vertex AI container that uses the agent registry to instantiate the correct agent.
-*   **Vertex AI Agent Engine (`deploy_agent_engine.py`)**:
-    *   Provides a deployment script for deploying agents to Vertex AI Agent Engine.
-    *   Uses the Agent Engine API to deploy the agent as a fully managed service.
-    *   Supports environment-specific configurations for different deployment environments.
-    *   Includes local and remote testing capabilities.
 
-### 4.7. CLI (`run.py`, `src/cli.py`)
+*   **Direct Deployment to Agent Engine (`direct_deploy.py`) - Recommended**:
+    *   Provides a streamlined deployment process for Vertex AI Agent Engine.
+    *   Reads configuration directly from environment variables (.env file).
+    *   Handles the entire deployment process in a single script:
+        *   Creates an agent instance with default or configured parameters
+        *   Tests the agent locally before deployment
+        *   Deploys to Vertex AI Agent Engine
+        *   Updates chat.py with the new Agent Engine ID
+        *   Creates a backup of the original chat.py file
+    *   Simple to use with minimal configuration (just run `python direct_deploy.py`).
+
+*   **Configurable Deployment to Agent Engine (`deploy_agent_engine.py`)**:
+    *   Provides a more configurable deployment script for Vertex AI Agent Engine.
+    *   Uses YAML configuration files (deployment_config.yaml with environment-specific overrides).
+    *   Supports different deployment environments (development, staging, production).
+    *   Includes local and remote testing capabilities.
+    *   More complex but offers greater flexibility for different deployment scenarios.
+
+### 4.6. CLI (`run.py`, `src/cli.py`)
 
 Provides a command-line interface for interacting with the starter kit.
 
 *   **Entry Point**: `run.py` is the main script executed.
-*   **Implementation**: `src/cli.py` likely uses a library like Typer or Click to define commands.
+*   **Implementation**: `src/cli.py` uses the agent registry to create and run agents.
 *   **Commands**:
     *   `run [AGENT_TYPE]`: Runs the specified agent (using the registry). Options like `--interactive` for chat or `--port` for local web UI.
-    *   `deploy [AGENT_TYPE]`: Deploys the specified agent to Vertex AI, taking project ID and region as arguments.
-    *   `list-agents`: Lists available agent types from the registry.
+    *   `config`: Displays configuration information.
+    *   Lists available agent types from the registry.
+
+### 4.7. Chat Utility (`chat.py`)
+
+A script for interacting with agents deployed on Vertex AI Agent Engine.
+
+*   **Functionality**:
+    *   Connects to a deployed agent using the Vertex AI SDK.
+    *   Creates a session for the conversation.
+    *   Provides an interactive chat interface in the terminal.
+    *   Handles streaming responses from the agent.
+*   **Usage**: Run with `python chat.py` after setting appropriate configuration variables.
 
 ---
 
@@ -333,11 +341,10 @@ Provides a command-line interface for interacting with the starter kit.
 
 The following describes the typical flow of execution:
 
-1.  **User Interaction (CLI)**: The user runs a command via `run.py`, e.g., `python run.py run search --interactive`.
-2.  **CLI Processing (`src/cli.py`)**: The CLI parses the command. For `run`, it identifies the agent type ("search").
-3.  **Agent Creation (`src/registry.py`)**: The CLI calls `registry.create_agent("search", ...)`. The registry finds the factory for "search" and executes it, creating a `SearchAgent` instance.
-4.  **Agent Initialization (`SearchAgent` -> `BaseAgent`)**:
-    *   `SearchAgent.__init__` adds `google_search` tool and calls `BaseAgent.__init__`.
+1.  **User Interaction (CLI)**: The user runs a command via `run.py`, e.g., `python run.py run base --interactive`.
+2.  **CLI Processing (`src/cli.py`)**: The CLI parses the command. For `run`, it identifies the agent type ("base").
+3.  **Agent Creation (`src/registry.py`)**: The CLI calls `registry.create_agent("base", ...)`. The registry finds the factory for "base" and executes it, creating a `BaseAgent` instance with the Google Search tool.
+4.  **Agent Initialization (`BaseAgent`)**:
     *   `BaseAgent.__init__` validates inputs, creates the internal `LlmAgent` (passing tools), sets up the session service, and creates the `Runner`.
 5.  **Execution (Interactive Mode)**:
     *   The CLI starts an input loop.
@@ -362,36 +369,33 @@ sequenceDiagram
     participant User as "User"
     participant CLI as "CLI (run.py / cli.py)"
     participant Registry as "Registry (registry.py)"
-    participant Agent as "Agent (e.g., SearchAgent)"
-    participant BaseAgent as "BaseAgent (base_agent.py)"
+    participant Agent as "Agent (BaseAgent)"
     participant LlmAgent as "LlmAgent (ADK)"
     participant Tool as "Tool (e.g., google_search)"
     participant GeminiAPI as "Gemini API"
     participant Runner as "Runner (ADK)"
     participant SessionService as "SessionService (ADK)"
 
-    User->>CLI: "python run.py run search --interactive"
-    CLI->>Registry: "create_agent('search', ...)"
-    Registry-->>CLI: "agent_instance (SearchAgent)"
-    Note over Agent, BaseAgent: "SearchAgent.__init__() calls BaseAgent.__init__()"
-    BaseAgent->>LlmAgent: "Creates LlmAgent(tools=[google_search])"
-    BaseAgent->>SessionService: "Creates InMemorySessionService()"
-    BaseAgent->>Runner: "Creates Runner(agent=self)"
+    User->>CLI: "python run.py run base --interactive"
+    CLI->>Registry: "create_agent('base', ...)"
+    Registry-->>CLI: "agent_instance (BaseAgent)"
+    Note over Agent: "BaseAgent.__init__()"
+    Agent->>LlmAgent: "Creates LlmAgent(tools=[google_search])"
+    Agent->>SessionService: "Creates InMemorySessionService()"
+    Agent->>Runner: "Creates Runner(agent=self)"
     CLI->>User: "Prompt for input"
     User->>CLI: "What is the capital of France?"
     CLI->>Runner: "run(user_id, session_id, message)"
     Runner->>SessionService: "Get/Update Session State"
     Runner->>Agent: "Calls _run_async_impl via ADK framework"
-    Agent->>BaseAgent: "Inherited _run_async_impl"
-    BaseAgent->>LlmAgent: "run_async(ctx)"
+    Agent->>LlmAgent: "run_async(ctx)"
     LlmAgent->>GeminiAPI: "Sends prompt + tools schema"
     GeminiAPI-->>LlmAgent: "Suggests calling google_search('capital of France')"
     LlmAgent->>Tool: "Executes google_search('capital of France')"
     Tool-->>LlmAgent: "Returns 'Paris'"
     LlmAgent->>GeminiAPI: "Sends tool result"
     GeminiAPI-->>LlmAgent: "Final response 'The capital of France is Paris.'"
-    LlmAgent-->>BaseAgent: "Yields final response event"
-    BaseAgent-->>Agent: "Yields event"
+    LlmAgent-->>Agent: "Yields final response event"
     Agent-->>Runner: "Yields event"
     Runner-->>CLI: "Returns list of events"
     CLI->>User: "Prints 'The capital of France is Paris.'"
@@ -399,46 +403,30 @@ sequenceDiagram
 
 ---
 
-## 6. Key Dependencies (from `requirements.txt`)
-
-| Package                   | Version   | Purpose                                  |
-| ------------------------- | --------- | ---------------------------------------- |
-| google-adk                | >=0.2.0   | Core Google Agent Development Kit        |
-| google-generativeai       | >=0.3.0   | Google Gemini API Client                 |
-| google-cloud-aiplatform   | >=1.36.0  | Google Vertex AI Client                  |
-| google-auth               | >=2.22.0  | Google Authentication                    |
-| fastapi                   | >=0.103.1 | Web framework for local deployment UI    |
-| uvicorn                   | >=0.23.2  | ASGI server for FastAPI                  |
-| websockets                | >=11.0.3  | WebSocket support for local UI           |
-| python-dotenv             | >=1.0.0   | Loading .env files                       |
-| pydantic                  | >=2.4.2   | Data validation (used in hybrid approach) |
-| pytest                    | >=7.4.2   | Testing framework                        |
-| black, isort, flake8, mypy | Various   | Code formatting, linting, type checking |
-
----
-
 ## 7. Basic Usage Examples
 
-### 7.1. Interactive Mode (Search Agent)
+### 7.1. Interactive Mode (Base Agent)
 
 ```bash
-python run.py run search --interactive
+python run.py run base --interactive
 ```
 
-### 7.2. Programmatic Use (Search Agent)
+### 7.2. Programmatic Use (Base Agent with Search Tool)
 
 ```python
-from src.agents.search_agent import SearchAgent
+from src.agents.base_agent import BaseAgent
+from google.adk.tools import google_search
 
-# Create a search agent
-agent = SearchAgent(
-    name="my_search_agent",
-    description="My custom search agent",
+# Create a base agent with Google Search
+agent = BaseAgent(
+    name="my_base_agent",
+    description="My custom base agent with search",
     instruction="Answer questions using Google Search",
+    tools=[google_search],
 )
 
-# Search for information
-response = agent.search("What is the capital of France?")
+# Run the agent
+response = agent.run_and_get_response(user_id="prog_user", session_id="prog_session", message="What is the capital of France?")
 print(response)
 # Output: The capital of France is Paris. (or similar)
 ```
@@ -471,5 +459,41 @@ class MyCustomAgent(BaseAgent):
             yield event
 
 # Remember to register this agent in src/registry.py to use it via CLI
-# registry.register_agent_type("custom", lambda **kwargs: MyCustomAgent(**kwargs))
+# register_agent_type("custom", lambda **kwargs: MyCustomAgent(**kwargs))
 # Then run: python run.py run custom --interactive
+```
+
+### 7.4. Interacting with a Deployed Agent
+
+```bash
+# Configure variables in chat.py or set environment variables
+python chat.py
+```
+
+### 7.5. Deploying Using direct_deploy.py (Recommended)
+
+```bash
+# Ensure you have set these variables in your .env file:
+# GOOGLE_CLOUD_PROJECT=your-project-id
+# STAGING_BUCKET=your-bucket-name
+# GOOGLE_CLOUD_REGION=us-central1 (optional, defaults to us-central1)
+
+# Run the direct deployment script
+python direct_deploy.py
+
+# After successful deployment, interact with your deployed agent
+python chat.py
+```
+
+Example output from direct_deploy.py:
+
+```
+2025-04-21 08:33:41,030 - direct_deploy - INFO - Using Project ID: risk-manager-457219
+2025-04-21 08:33:41,030 - direct_deploy - INFO - Using Region: us-central1
+2025-04-21 08:33:41,030 - direct_deploy - INFO - Using Staging Bucket: gs://risk7
+...
+2025-04-21 08:37:48,023 - direct_deploy - INFO - Agent deployed successfully to Agent Engine: 1578942677951447040
+...
+2025-04-21 08:37:52,590 - direct_deploy - INFO - Direct deployment completed successfully!
+2025-04-21 08:37:52,590 - direct_deploy - INFO - Agent Engine ID: 1578942677951447040
+2025-04-21 08:37:52,590 - direct_deploy - INFO - You can now interact with your agent using 'python chat.py'

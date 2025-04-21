@@ -52,32 +52,13 @@ cp .env.example .env
 
 #### Interactive Mode
 
-Run the search agent in interactive mode:
+Run the base agent in interactive mode:
 
 ```bash
-python run.py run search --interactive
+python run.py run base --interactive
 ```
 
 This will start an interactive session where you can chat with the agent.
-
-#### Programmatic Use
-
-Create a simple search agent:
-
-```python
-from src.agents.search_agent import SearchAgent
-
-# Create a search agent
-agent = SearchAgent(
-    name="my_search_agent",
-    description="My custom search agent",
-    instruction="Answer questions using Google Search",
-)
-
-# Search for information
-response = agent.search("What is the capital of France?")
-print(response)
-```
 
 #### Creating a Custom Agent
 
@@ -124,25 +105,41 @@ class MyCustomAgent(BaseAgent):
 ## Project Structure
 
 ```
-google-adk-agent-starter-kit/
+MonteCarloRisk_AI/
 ├── README.md                 # Documentation and getting started guide
-├── requirements.txt          # Dependencies
+├── requirements.txt          # Dependencies for the project
 ├── .env.example              # Template for environment variables
 ├── .env                      # Environment variables (not in version control)
 ├── setup.py                  # Package setup for distribution
 ├── run.py                    # CLI entry point
-├── docs/                     # Documentation directory
+├── chat.py                   # Script to interact with deployed agent via SDK
+├── direct_deploy.py          # Streamlined script for direct deployment (recommended)
+├── TASK.md                   # Current and completed tasks
+├── commands.txt              # Useful commands for reference
+├── pytest.ini                # Configuration for pytest
+├── docs/
 │   ├── DOCUMENTATION_1.md    # Comprehensive documentation
-│   ├── PLANNING_1.md         # Project architecture and design decisions
-│   └── TASKS_1.md            # Implementation tasks and timeline
+│   ├── DIRECT_DEPLOY.md      # Guide for direct deployment (recommended)
+│   ├── PYDANTIC_USAGE.md     # Guidelines for using Pydantic
+│   ├── AGENT_ENGINE_DEPLOYMENT.md # Guide for Agent Engine deployment
+│   ├── project_visualization.html # Project structure visualization
+│   ├── project_visualization.md   # Project structure in markdown
+│   ├── PLANNING.md           # Architecture and design decisions
+│   ├── ACTION_ITEMS.md       # Action items and improvements
+│   └── index.md              # Documentation index
+├── backup/                   # Backup files (ignored by git)
+├── environments/             # Environment-specific configurations
+│   ├── development.yaml      # Development environment configuration
+│   ├── staging.yaml          # Staging environment configuration
+│   └── production.yaml       # Production environment configuration
 ├── src/
 │   ├── __init__.py
 │   ├── config.py             # Configuration settings
 │   ├── cli.py                # CLI implementation
+│   ├── registry.py           # Agent registry for dynamic agent creation
 │   ├── agents/
 │   │   ├── __init__.py
-│   │   ├── base_agent.py     # True custom agent implementation
-│   │   └── search_agent.py   # Example Google Search agent implementation
+│   │   └── base_agent.py     # Base agent implementation (includes search tool)
 │   ├── tools/
 │   │   ├── __init__.py
 │   │   └── custom_tools.py   # Template for creating custom tools
@@ -160,9 +157,10 @@ google-adk-agent-starter-kit/
 │   └── streaming_agent.py           # Example with streaming capabilities
 └── tests/
     ├── __init__.py
-    ├── test_search_agent.py         # Tests for the search agent
     └── test_custom_tools.py         # Tests for custom tools
 ```
+
+> Note: Some additional files like .git/, .coverage, .pytest_cache/, and venv/ are excluded from this structure as they are generated files or directories.
 
 ## Key Components
 
@@ -177,15 +175,6 @@ Key features:
 - Provides convenience methods for running the agent and getting responses
 - Uses a hybrid approach for Pydantic with validation methods
 
-### SearchAgent
-
-The `SearchAgent` class extends `BaseAgent` to provide a specialized agent that can search the web using Google Search to answer questions.
-
-Key features:
-- Integrates with Google Search tool
-- Implements custom orchestration logic for search queries
-- Provides a convenient `search` method for direct use
-
 ### Custom Tools
 
 The starter kit includes support for custom tools that can be used by agents to perform specific tasks.
@@ -199,42 +188,96 @@ Key features:
 
 ### Interactive Mode
 
-Run the agent in interactive mode:
+Run the base agent in interactive mode:
 
 ```bash
-python run.py run search --interactive
+python run.py run base --interactive
 ```
 
 This will start an interactive session where you can chat with the agent.
 
 ### Deployment
 
-#### Local Development
+#### Local Development Web UI
 
-For local development and testing:
+For local development and testing with a web interface:
 
 ```bash
-python run.py run search --port 8000
+# Ensure GOOGLE_API_KEY or DEV_MODE=TRUE is set in your environment/.env
+python run.py run base --web --port 8000
+```
+Access the interface at `http://localhost:8000`. *(Note: If the page shows ERR_EMPTY_RESPONSE despite the server starting, check browser developer console for errors).*
+
+#### Vertex AI Agent Engine Deployment
+
+For deploying to Vertex AI Agent Engine:
+
+##### Using direct_deploy.py (Recommended Method)
+
+The simplest and most reliable deployment method:
+
+```bash
+# Ensure your .env file has GOOGLE_CLOUD_PROJECT and STAGING_BUCKET set
+python direct_deploy.py
 ```
 
-#### Vertex AI Deployment
+This streamlined script:
+- Reads configuration from environment variables
+- Creates and tests the agent locally
+- Deploys to Vertex AI Agent Engine
+- Automatically updates chat.py with the new Agent Engine ID
+- Creates a backup of the original chat.py file
 
-For deploying to Vertex AI:
+See `docs/DIRECT_DEPLOY.md` for full details and environment variable configuration.
+
+##### Using deploy_agent_engine.py (Alternative Method)
+
+For deployments with complex configuration requirements:
 
 ```bash
-python run.py deploy search --project your-project-id --region us-central1
+# Ensure environments/your_env.yaml is configured with project_id, etc.
+# Ensure you have run 'gcloud auth application-default login'
+python deploy_agent_engine.py --environment <your_env> --staging-bucket gs://your-bucket-name
+```
+
+For redeploying after making changes to the codebase, you can use the automated redeployment script:
+
+```bash
+# This script handles both deployment and updating chat.py with the new Agent Engine ID
+python redeploy.py --environment <your_env>
+```
+
+The deployment scripts read configuration values from your `.env` file:
+- `GOOGLE_CLOUD_PROJECT`
+- `STAGING_BUCKET`
+- `GOOGLE_CLOUD_REGION`
+
+You can also override these values with command-line arguments.
+
+See `docs/AGENT_ENGINE_DEPLOYMENT.md` for full details and troubleshooting.
+
+#### Interacting with Deployed Agent
+
+Use the `chat.py` script to interact with the agent deployed on Vertex AI Agent Engine via the Python SDK:
+
+```bash
+# The direct_deploy.py and redeploy.py scripts automatically update chat.py
+python chat.py
 ```
 
 ## Documentation
 
 For more detailed documentation, see:
 
-- [Comprehensive Documentation](docs/DOCUMENTATION_1.md) - Detailed guide to the starter kit
-- [Planning Document](docs/PLANNING_1.md) - Project architecture and design decisions
-- [Tasks Document](docs/TASKS_1.md) - Implementation tasks and timeline
-- [Pydantic Usage Guidelines](docs/PYDANTIC_USAGE.md) - Guidelines for using Pydantic in agent classes
-- [Test Report](docs/TEST_REPORT.md) - Test coverage and results
-- [Google ADK Documentation](https://cloud.google.com/vertex-ai/docs/agent-development-kit/overview) - Official ADK documentation
+- [Documentation Index](docs/index.md) - Central index of all documentation resources.
+- [Direct Deployment Guide](docs/DIRECT_DEPLOY.md) - Guide for the recommended deployment method.
+- [Agent Engine Deployment Guide](docs/AGENT_ENGINE_DEPLOYMENT.md) - Comprehensive guide for Vertex AI Agent Engine deployment.
+- [Planning Document](docs/PLANNING.md) - Project architecture and design decisions.
+- [Task List](TASK.md) - Current and completed tasks.
+- [Pydantic Usage Guidelines](docs/PYDANTIC_USAGE.md) - Guidelines for using Pydantic in agent classes.
+- [Google ADK Documentation](https://cloud.google.com/vertex-ai/docs/agent-development-kit/overview) - Official ADK documentation.
+- [Action Items](docs/ACTION_ITEMS.md) - Action items and improvements for the project.
+*(Other files in `docs/` may contain historical or specific reports)*
 
 ## Pydantic Usage
 

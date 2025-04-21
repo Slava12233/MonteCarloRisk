@@ -1,0 +1,263 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Vertex AI Agent Engine Deployment Guide - MonteCarloRisk_AI</title>
+        <link rel="stylesheet" href="style.css">
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                mermaid.initialize({
+                    startOnLoad: true,
+                    theme: 'default',
+                    securityLevel: 'loose',
+                    flowchart: { useMaxWidth: false }
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div class="navbar">
+            <h1>MonteCarloRisk_AI</h1>
+            <p><a href="index.html" style="color: white;">← Back to Documentation Index</a></p>
+        </div>
+        
+        <h1 id="vertex-ai-agent-engine-deployment-guide">Vertex AI Agent Engine Deployment Guide</h1>
+<h2 id="overview">Overview</h2>
+<p>This guide provides detailed instructions for deploying agents to Google Cloud's Vertex AI Agent Engine using our deployment infrastructure. Agent Engine is a fully managed service specifically designed for AI agents, offering advantages over traditional Vertex AI endpoints.</p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#introduction-to-agent-engine">Introduction to Agent Engine</a></li>
+<li><a href="#prerequisites">Prerequisites</a></li>
+<li><a href="#deployment-infrastructure">Deployment Infrastructure</a></li>
+<li><a href="#deployment-methods">Deployment Methods</a></li>
+<li><a href="#managing-deployed-agents">Managing Deployed Agents</a></li>
+<li><a href="#monitoring-and-logging">Monitoring and Logging</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+<li><a href="#best-practices">Best Practices</a></li>
+</ol>
+<h2 id="introduction-to-agent-engine">Introduction to Agent Engine</h2>
+<p>Vertex AI Agent Engine is a fully managed Google Cloud service enabling developers to deploy, manage, and scale AI agents in production. Agent Engine handles the infrastructure to scale agents in production so you can focus on creating intelligent and impactful applications.</p>
+<h3 id="advantages-over-traditional-vertex-ai-endpoints">Advantages over Traditional Vertex AI Endpoints</h3>
+<ul>
+<li><strong>Built-in Session Management</strong>: Agent Engine provides built-in session management for maintaining conversation state.</li>
+<li><strong>Automatic Scaling</strong>: Agent Engine automatically scales based on demand.</li>
+<li><strong>Improved Monitoring and Tracing</strong>: Agent Engine provides enhanced monitoring and tracing capabilities.</li>
+<li><strong>Optimized for Agent Workloads</strong>: Agent Engine is specifically designed for agent workloads, providing better performance and reliability.</li>
+</ul>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Before deploying to Agent Engine, ensure you have the following:</p>
+<ul>
+<li>Python 3.9 or higher (Agent Engine only supports Python &gt;=3.9 and &lt;=3.12)</li>
+<li>Google Cloud project with Vertex AI API enabled</li>
+<li>Google Cloud Storage bucket for staging</li>
+<li>Required Python packages installed:
+  <code>bash
+  pip install 'google-cloud-aiplatform[adk,agent_engines]'</code></li>
+<li>Google Cloud SDK installed and configured</li>
+<li>Appropriate permissions:</li>
+<li>Vertex AI User (roles/aiplatform.user) for your service account</li>
+</ul>
+<h2 id="deployment-infrastructure">Deployment Infrastructure</h2>
+<p>Our deployment infrastructure includes the following components:</p>
+<ul>
+<li><strong>direct_deploy.py</strong>: Streamlined script for direct deployment (recommended method)</li>
+<li><strong>deploy_agent_engine.py</strong>: Configurable deployment script using deployment_config.yaml</li>
+<li><strong>redeploy.py</strong>: Wrapper script that includes deployment and chat.py updates</li>
+<li><strong>deployment_config.yaml</strong>: Base configuration file for deploy_agent_engine.py</li>
+<li><strong>environments/</strong>: Directory containing environment-specific configurations for deploy_agent_engine.py</li>
+<li><strong>development.yaml</strong>: Development environment configuration</li>
+<li><strong>staging.yaml</strong>: Staging environment configuration</li>
+<li><strong>production.yaml</strong>: Production environment configuration</li>
+</ul>
+<h3 id="configuration-structure">Configuration Structure</h3>
+<p>The configuration files follow a hierarchical structure:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Environment Settings</span>
+<span class="nt">environment</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">development</span>
+
+<span class="c1"># Vertex AI Deployment Settings</span>
+<span class="nt">vertex_ai</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">project_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">your-project-id</span>
+<span class="w">  </span><span class="nt">region</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">us-central1</span>
+<span class="w">  </span><span class="nt">machine_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">n1-standard-1</span>
+<span class="w">  </span><span class="nt">min_replica_count</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">  </span><span class="nt">max_replica_count</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+
+<span class="c1"># Agent Settings</span>
+<span class="nt">agent</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">search</span>
+<span class="w">  </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gemini-2.0-flash</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Development</span><span class="nv"> </span><span class="s">search</span><span class="nv"> </span><span class="s">agent&quot;</span>
+<span class="w">  </span><span class="nt">instruction</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;I</span><span class="nv"> </span><span class="s">can</span><span class="nv"> </span><span class="s">answer</span><span class="nv"> </span><span class="s">your</span><span class="nv"> </span><span class="s">questions</span><span class="nv"> </span><span class="s">by</span><span class="nv"> </span><span class="s">searching</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">internet.</span><span class="nv"> </span><span class="s">Just</span><span class="nv"> </span><span class="s">ask</span><span class="nv"> </span><span class="s">me</span><span class="nv"> </span><span class="s">anything!&quot;</span>
+</code></pre></div>
+
+<h2 id="deployment-methods">Deployment Methods</h2>
+<h3 id="method-1-using-direct_deploypy-recommended">Method 1: Using direct_deploy.py (Recommended)</h3>
+<p>The simplest and most reliable deployment method uses the direct_deploy.py script, which:
+- Reads configuration directly from environment variables
+- Handles the entire deployment process in a single script
+- Automatically updates chat.py with the new Agent Engine ID</p>
+<div class="codehilite"><pre><span></span><code>python<span class="w"> </span>direct_deploy.py
+</code></pre></div>
+
+<p>This script:
+1. Creates an agent instance based on environment variables
+2. Tests the agent locally
+3. Deploys the agent to Vertex AI Agent Engine
+4. Updates chat.py with the new Agent Engine ID
+5. Tests the deployed agent</p>
+<p>You can configure the deployment by setting these environment variables (or using .env file):
+- GOOGLE_CLOUD_PROJECT: Your Google Cloud project ID
+- GOOGLE_CLOUD_REGION: Your Google Cloud region (default: us-central1)
+- STAGING_BUCKET: Your Google Cloud Storage bucket for staging (with or without gs:// prefix)</p>
+<h3 id="method-2-using-deploy_agent_enginepy">Method 2: Using deploy_agent_engine.py</h3>
+<p>For more configurable deployments, use the deploy_agent_engine.py script:</p>
+<div class="codehilite"><pre><span></span><code>python<span class="w"> </span>deploy_agent_engine.py<span class="w"> </span>--environment<span class="w"> </span>development<span class="w"> </span>--staging-bucket<span class="w"> </span>gs://your-bucket-name
+</code></pre></div>
+
+<p>This will:
+1. Load the configuration for the specified environment
+2. Create an agent with the specified configuration
+3. Test the agent locally
+4. Deploy the agent to Vertex AI Agent Engine
+5. Create a test session to verify the deployment</p>
+<h3 id="method-3-using-redeploypy">Method 3: Using redeploy.py</h3>
+<p>For redeployment with automatic chat.py updates:</p>
+<div class="codehilite"><pre><span></span><code>python<span class="w"> </span>redeploy.py<span class="w"> </span>--environment<span class="w"> </span>development<span class="w"> </span>--staging-bucket<span class="w"> </span>gs://your-bucket-name
+</code></pre></div>
+
+<p>This script:
+1. Runs deploy_agent_engine.py with the specified parameters
+2. Extracts the Agent Engine ID from the output
+3. Updates chat.py with the new Agent Engine ID
+4. Creates a backup of the original chat.py file</p>
+<h3 id="verify-deployment">Verify Deployment</h3>
+<p>All deployment methods verify deployment by creating a test session and sending a test query. If successful, you'll see output similar to:</p>
+<div class="codehilite"><pre><span></span><code>Agent deployed successfully to Agent Engine: &lt;agent_id&gt;
+Created remote test session: &lt;session_id&gt;
+Received &lt;n&gt; events from remote agent
+</code></pre></div>
+
+<h2 id="managing-deployed-agents">Managing Deployed Agents</h2>
+<h3 id="listing-deployed-agents">Listing Deployed Agents</h3>
+<p>To list your deployed agents, you can use the Google Cloud Console or the <code>gcloud</code> command:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Note: As of April 2025, the &#39;agent-engines&#39; subcommand may not be available</span>
+<span class="c1"># in all gcloud installations. Use the Python SDK or Cloud Console if available.</span>
+gcloud<span class="w"> </span>ai<span class="w"> </span>agent-engines<span class="w"> </span>list<span class="w"> </span>--region<span class="o">=</span>us-central1
+</code></pre></div>
+
+<h3 id="verifying-deployment-status">Verifying Deployment Status</h3>
+<p>As of April 2025, the Google Cloud Console UI for Agent Engine is not yet available, and <code>gcloud</code> commands (<code>gcloud ai agent-engines</code> or <code>gcloud ai reasoning-engines</code>) may not work depending on your <code>gcloud</code> version and components.</p>
+<p>The most reliable way to verify deployment status and interact with the agent is currently via the <strong>Python SDK</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">vertexai</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">vertexai</span><span class="w"> </span><span class="kn">import</span> <span class="n">agent_engines</span>
+
+<span class="c1"># Replace with your details</span>
+<span class="n">PROJECT_ID</span> <span class="o">=</span> <span class="s2">&quot;your-project-id&quot;</span>
+<span class="n">LOCATION</span> <span class="o">=</span> <span class="s2">&quot;us-central1&quot;</span>
+<span class="n">AGENT_ENGINE_ID</span> <span class="o">=</span> <span class="s2">&quot;your-agent-engine-id&quot;</span> 
+<span class="n">AGENT_ENGINE_NAME</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;projects/</span><span class="si">{</span><span class="n">PROJECT_ID</span><span class="si">}</span><span class="s2">/locations/</span><span class="si">{</span><span class="n">LOCATION</span><span class="si">}</span><span class="s2">/reasoningEngines/</span><span class="si">{</span><span class="n">AGENT_ENGINE_ID</span><span class="si">}</span><span class="s2">&quot;</span> <span class="c1"># Note: Uses &#39;reasoningEngines&#39; path</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">vertexai</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">PROJECT_ID</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="n">LOCATION</span><span class="p">)</span>
+    <span class="n">agent_engine</span> <span class="o">=</span> <span class="n">agent_engines</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">AGENT_ENGINE_NAME</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully connected to agent engine: </span><span class="si">{</span><span class="n">AGENT_ENGINE_NAME</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># You can now use agent_engine.create_session(), agent_engine.stream_query(), etc.</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to connect to agent engine: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+
+<p><em>(See <code>chat.py</code> in the project root for a full interaction example)</em></p>
+<h3 id="deleting-deployed-agents">Deleting Deployed Agents</h3>
+<p>To delete a deployed agent, you can use the Python SDK (as the Console UI may not be available):</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">vertexai</span><span class="w"> </span><span class="kn">import</span> <span class="n">agent_engines</span>
+
+<span class="c1"># Get the remote app</span>
+<span class="n">remote_app</span> <span class="o">=</span> <span class="n">agent_engines</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;&lt;agent_id&gt;&quot;</span><span class="p">)</span>
+
+<span class="c1"># Delete the agent</span>
+<span class="n">remote_app</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+
+<p>The <code>force=True</code> parameter will also delete any child resources that were generated from the deployed agent, such as sessions.</p>
+<h2 id="monitoring-and-logging">Monitoring and Logging</h2>
+<h3 id="cloud-logging">Cloud Logging</h3>
+<p>Agent Engine logs are available in Cloud Logging. You can view them in the Google Cloud Console or using the <code>gcloud</code> command:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Note: Use ReasoningEngine as the resource type based on observed logs (April 2025)</span>
+<span class="c1"># Enclose the filter in single quotes for shell compatibility</span>
+gcloud<span class="w"> </span>logging<span class="w"> </span><span class="nb">read</span><span class="w"> </span><span class="s1">&#39;resource.type=&quot;aiplatform.googleapis.com/ReasoningEngine&quot; AND resource.labels.reasoning_engine_id=&quot;&lt;agent_id&gt;&quot;&#39;</span><span class="w"> </span>--project<span class="o">=</span>&lt;your-project-id&gt;<span class="w"> </span>--format<span class="o">=</span>json<span class="w"> </span>--limit<span class="o">=</span><span class="m">50</span>
+</code></pre></div>
+
+<h3 id="cloud-monitoring">Cloud Monitoring</h3>
+<p>Agent Engine metrics are available in Cloud Monitoring. You can create custom dashboards and alerts based on these metrics.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="common-issues">Common Issues</h3>
+<h4 id="authentication-errors">Authentication Errors</h4>
+<p><strong>Symptom</strong>: Error message about authentication failure.</p>
+<p><strong>Solution</strong>:
+1. Ensure you're authenticated with the Google Cloud SDK:
+   <code>bash
+   gcloud auth application-default login</code>
+2. Verify that your service account has the necessary permissions.</p>
+<h4 id="missing-dependencies">Missing Dependencies</h4>
+<p><strong>Symptom</strong>: Error message about missing dependencies.</p>
+<p><strong>Solution</strong>:
+1. Install the required dependencies:
+   <code>bash
+   pip install 'google-cloud-aiplatform[adk,agent_engines]'</code></p>
+<h4 id="deployment-failures">Deployment Failures</h4>
+<p><strong>Symptom</strong>: Error message about deployment failure.</p>
+<p><strong>Solution</strong>:
+1. Check the error message for specific details.
+2. Verify that your Google Cloud project has the necessary APIs enabled.
+3. Ensure your service account has the necessary permissions.
+4. Check that your staging bucket exists and is accessible.</p>
+<h4 id="modulenotfounderror-during-deployment">ModuleNotFoundError during Deployment</h4>
+<p><strong>Symptom</strong>: Deployment fails with a 500 error. Cloud Logs show <code>ModuleNotFoundError: No module named 'src'</code> (or similar for other project directories).</p>
+<p><strong>Cause</strong>: The deployment process packages the agent object (<code>.pkl</code>) but doesn't automatically include local source code directories needed for the agent to be deserialized and run in the Agent Engine environment.</p>
+<p><strong>Solution</strong>:
+1. Locate the <code>agent_engines.create(...)</code> call in your deployment script (e.g., <code>deploy_agent_engine.py</code>).
+2. Add the <code>extra_packages</code> parameter, listing the relative paths to the required source directories. For this project structure, include the <code>src</code> directory:
+   <code>python
+   remote_app = agent_engines.create(
+       agent_engine=agent,
+       requirements=[...],
+       # Include the 'src' directory in the deployment package
+       extra_packages=['./src'] 
+   )</code>
+3. Re-run the deployment script.</p>
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="configuration-management">Configuration Management</h3>
+<ol>
+<li><strong>Use Environment Variables for Direct Deployment</strong>: For simple deployments, use environment variables with direct_deploy.py.</li>
+<li><strong>Use Environment-Specific Configurations</strong>: For complex scenarios, create separate configuration files for development, staging, and production environments.</li>
+<li><strong>Store Sensitive Information Securely</strong>: Use environment variables or secret management services for sensitive information.</li>
+<li><strong>Version Control Configurations</strong>: Store configuration files in version control, but exclude sensitive information.</li>
+</ol>
+<h3 id="deployment-strategy">Deployment Strategy</h3>
+<ol>
+<li><strong>Test Locally First</strong>: Always test your agent locally before deploying to Agent Engine.</li>
+<li><strong>Use Staging Environment</strong>: Deploy to a staging environment before deploying to production.</li>
+<li><strong>Automate Deployments</strong>: Use CI/CD pipelines to automate deployments.</li>
+<li><strong>Monitor Deployments</strong>: Set up monitoring and alerts for your deployed agents.</li>
+</ol>
+<h3 id="resource-management">Resource Management</h3>
+<ol>
+<li><strong>Clean Up Unused Resources</strong>: Delete unused agents and sessions to avoid unnecessary costs.</li>
+<li><strong>Set Resource Limits</strong>: Configure appropriate resource limits for your agents.</li>
+<li><strong>Monitor Resource Usage</strong>: Regularly monitor resource usage to optimize costs.</li>
+</ol>
+<hr />
+<p><em>Document Version: 1.2</em><br />
+<em>Last Updated: April 21, 2025</em><br />
+<em>Author: [Your Name], CTO</em></p>
+        
+        <div class="footer">
+            <p>Generated on 2025-04-21 09:00:32</p>
+            <p><a href="index.html">Back to Documentation Index</a></p>
+        </div>
+    </body>
+    </html>
+    
