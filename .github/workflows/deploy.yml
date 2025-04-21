@@ -1,0 +1,170 @@
+name: Deploy Google ADK Agent
+
+on:
+  push:
+    branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      deploy_target:
+        description: 'Deployment target'
+        required: true
+        default: 'local'
+        type: choice
+        options:
+          - local
+          - vertex
+          - both
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          python -m pytest
+
+  build:
+    name: Build Deployment Package
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create deployment package
+        run: |
+          python run.py build
+
+      - name: Upload deployment package
+        uses: actions/upload-artifact@v3
+        with:
+          name: deployment-package
+          path: deploy/*.zip
+          retention-days: 1
+
+  deploy-vertex:
+    name: Deploy to Vertex AI
+    needs: build
+    if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.deploy_target == 'vertex' || github.event.inputs.deploy_target == 'both') }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Download deployment package
+        uses: actions/download-artifact@v3
+        with:
+          name: deployment-package
+          path: deploy
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Deploy to Vertex AI
+        run: |
+          python deploy.py --vertex --environment ${{ github.event.inputs.environment }}
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+  deploy-local:
+    name: Deploy Locally (for testing)
+    needs: build
+    if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.deploy_target == 'local' || github.event.inputs.deploy_target == 'both') }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Download deployment package
+        uses: actions/download-artifact@v3
+        with:
+          name: deployment-package
+          path: deploy
+
+      - name: Start local deployment
+        run: |
+          python deploy.py --local --environment ${{ github.event.inputs.environment }} &
+          sleep 10  # Give the server time to start
+
+      - name: Test local deployment
+        run: |
+          curl -s http://localhost:8000/ | grep -q "Google ADK Agent"
+          if [ $? -eq 0 ]; then
+            echo "Local deployment successful!"
+            exit 0
+          else
+            echo "Local deployment failed!"
+            exit 1
+          fi

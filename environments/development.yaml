@@ -1,0 +1,52 @@
+# Development Environment Configuration for Google ADK Agent Starter Kit
+
+# Environment Settings
+environment: development
+
+# Vertex AI Deployment Settings
+vertex_ai:
+  project_id: your-dev-project-id
+  region: us-central1
+  machine_type: n1-standard-1
+  min_replica_count: 1
+  max_replica_count: 1
+  accelerator_type: NONE
+  accelerator_count: 0
+
+# Local Deployment Settings
+local:
+  host: 127.0.0.1
+  port: 8000
+  log_level: debug
+  reload: true
+
+# Agent Settings
+agent:
+  type: search
+  model: gemini-2.0-flash
+  description: "Development search agent"
+  instruction: "I can answer your questions by searching the internet. Just ask me anything!"
+
+# Monitoring Settings
+monitoring:
+  enable_logging: true
+  log_level: debug
+  enable_tracing: true
+  enable_metrics: true
+
+# Security Settings
+security:
+  enable_authentication: false
+  authentication_type: none
+  enable_rate_limiting: false
+  rate_limit: 1000
+  enable_cors: true
+  allowed_origins:
+    - "*"
+
+# Deployment Steps
+deployment_steps:
+  - name: Build deployment package
+    command: python run.py build
+  - name: Run tests
+    command: python -m pytest

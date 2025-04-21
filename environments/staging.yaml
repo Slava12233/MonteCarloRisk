@@ -1,0 +1,57 @@
+# Staging Environment Configuration for Google ADK Agent Starter Kit
+
+# Environment Settings
+environment: staging
+
+# Vertex AI Deployment Settings
+vertex_ai:
+  project_id: your-staging-project-id
+  region: us-central1
+  machine_type: n1-standard-2
+  min_replica_count: 1
+  max_replica_count: 3
+  accelerator_type: NVIDIA_TESLA_T4
+  accelerator_count: 1
+
+# Local Deployment Settings
+local:
+  host: 0.0.0.0
+  port: 8000
+  log_level: info
+  reload: false
+
+# Agent Settings
+agent:
+  type: search
+  model: gemini-2.0-flash
+  description: "Staging search agent"
+  instruction: "I can answer your questions by searching the internet. Just ask me anything!"
+
+# Monitoring Settings
+monitoring:
+  enable_logging: true
+  log_level: info
+  enable_tracing: true
+  enable_metrics: true
+
+# Security Settings
+security:
+  enable_authentication: true
+  authentication_type: api_key
+  enable_rate_limiting: true
+  rate_limit: 500
+  enable_cors: true
+  allowed_origins:
+    - https://staging.example.com
+    - https://api.staging.example.com
+
+# Deployment Steps
+deployment_steps:
+  - name: Build deployment package
+    command: python run.py build
+  - name: Run tests
+    command: python -m pytest
+  - name: Deploy to Vertex AI
+    command: python run.py deploy search --project {vertex_ai.project_id} --region {vertex_ai.region}
+  - name: Verify deployment
+    command: python run.py verify --endpoint {deployment_endpoint}
