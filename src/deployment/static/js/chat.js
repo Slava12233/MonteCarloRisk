@@ -5,6 +5,10 @@ const DEFAULT_USER_ID = 'local_user'; // Use a consistent user ID for local dev
 let currentUserId = DEFAULT_USER_ID;
 let currentSessionId = null; // Will be set on load or when creating new
 let webSocket = null;
+let reconnectAttempts = 0;
+let maxReconnectAttempts = 5;
+let reconnectTimeout = null;
+let isWaitingForResponse = false;
 
 // --- UI Elements ---
 let chatContainer;
@@ -12,6 +16,7 @@ let messageForm;
 let messageInput;
 let sessionList;
 let newSessionBtn;
+let statusIndicator;
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -21,6 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
     messageInput = document.getElementById('message-input');
     sessionList = document.getElementById('session-list');
     newSessionBtn = document.getElementById('new-session-btn');
+    
+    // Create status indicator
+    createStatusIndicator();
 
     // Load existing sessions or create a new one
     loadSessions(currentUserId);
@@ -33,40 +41,172 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Focus the input field
     messageInput.focus();
+    
+    // Handle page visibility changes
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 });
 
 // --- Core Functions ---
 
 // Function to add a message to the chat display
 function addMessage(text, sender) {
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message');
-        messageDiv.classList.add(sender);
-        messageDiv.textContent = text;
-        chatContainer.appendChild(messageDiv);
-        chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to bottom
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message');
+    messageDiv.classList.add(sender);
+    
+    // Convert URLs to clickable links
+    const linkedText = text.replace(
+        /(https?:\/\/[^\s]+)/g, 
+        '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
+    
+    messageDiv.innerHTML = linkedText;
+    chatContainer.appendChild(messageDiv);
+    chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to bottom
+}
+
+// Create a status indicator element
+function createStatusIndicator() {
+    statusIndicator = document.createElement('div');
+    statusIndicator.id = 'status-indicator';
+    statusIndicator.className = 'status-offline';
+    statusIndicator.title = 'Connection status';
+    document.body.appendChild(statusIndicator);
+    
+    // Add style if not already in CSS
+    if (!document.querySelector('style[data-id="status-indicator-style"]')) {
+        const style = document.createElement('style');
+        style.setAttribute('data-id', 'status-indicator-style');
+        style.textContent = `
+            #status-indicator {
+                position: fixed;
+                bottom: 10px;
+                left: 10px;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                transition: background-color 0.3s;
+            }
+            .status-online { background-color: #4CAF50; }
+            .status-connecting { background-color: #FFC107; }
+            .status-offline { background-color: #F44336; }
+            
+            .message.agent.typing:after {
+                content: "";
+                display: inline-block;
+                width: 12px;
+                height: 12px;
+                margin-left: 5px;
+                background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 30"><circle cx="15" cy="15" r="5"><animate attributeName="opacity" dur="1s" values="0;1;0" repeatCount="indefinite" begin="0.1"/></circle><circle cx="40" cy="15" r="5"><animate attributeName="opacity" dur="1s" values="0;1;0" repeatCount="indefinite" begin="0.2"/></circle><circle cx="65" cy="15" r="5"><animate attributeName="opacity" dur="1s" values="0;1;0" repeatCount="indefinite" begin="0.3"/></circle></svg>');
+                background-repeat: no-repeat;
+                background-size: contain;
+            }
+        `;
+        document.head.appendChild(style);
     }
+}
+
+// Update status indicator
+function updateStatus(status) {
+    if (!statusIndicator) return;
+    
+    statusIndicator.className = `status-${status}`;
+    
+    switch(status) {
+        case 'online':
+            statusIndicator.title = 'Connected';
+            break;
+        case 'connecting':
+            statusIndicator.title = 'Connecting...';
+            break;
+        case 'offline':
+            statusIndicator.title = 'Disconnected';
+            break;
+    }
+}
 
 // Handle form submission (using WebSocket)
 async function handleFormSubmit(e) {
     e.preventDefault();
     const messageText = messageInput.value.trim();
-    if (!messageText || !currentSessionId || !webSocket || webSocket.readyState !== WebSocket.OPEN) {
-        console.error("Cannot send message. No session, WebSocket not ready, or empty message.");
-        if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
-            addMessage("Error: Connection lost. Please refresh or select a session.", 'agent');
-        }
+    
+    // Validate form submission
+    if (!messageText) {
+        messageInput.focus();
         return;
+    }
+    
+    if (isWaitingForResponse) {
+        // Optionally show a message that agent is still thinking
+        const notification = document.createElement('div');
+        notification.classList.add('message', 'system');
+        notification.textContent = "Please wait for the agent to respond...";
+        chatContainer.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+        return;
+    }
+    
+    if (!currentSessionId) {
+        console.error("No session ID available");
+        addMessage("Error: No active session. Please refresh the page.", 'system');
+        return;
+    }
+    
+    // Check WebSocket status and reconnect if needed
+    if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
+        console.log("WebSocket not connected, attempting to reconnect...");
+        webSocket = setupWebSocket(currentUserId, currentSessionId);
+        
+        // Wait briefly for connection
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Check if connection successful
+        if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
+            addMessage("Error: Unable to connect to server. Please refresh the page.", 'system');
+            return;
+        }
     }
 
     // Add user message to chat display
     addMessage(messageText, 'user');
     messageInput.value = ''; // Clear input
-
+    
+    // Show typing indicator
+    showTypingIndicator();
+    
+    // Set waiting state
+    isWaitingForResponse = true;
+    messageInput.disabled = true;
+    
     // Send message via WebSocket
-    webSocket.send(messageText);
+    try {
+        webSocket.send(messageText);
+    } catch (error) {
+        console.error("Error sending message:", error);
+        hideTypingIndicator();
+        addMessage("Error: Failed to send message. Please try again.", 'system');
+        isWaitingForResponse = false;
+        messageInput.disabled = false;
+    }
 }
 
+// Show typing indicator
+function showTypingIndicator() {
+    const typingIndicator = document.createElement('div');
+    typingIndicator.classList.add('message', 'agent', 'typing');
+    typingIndicator.id = 'typing-indicator';
+    typingIndicator.textContent = "Agent is thinking...";
+    chatContainer.appendChild(typingIndicator);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+// Hide typing indicator
+function hideTypingIndicator() {
+    const typingIndicator = document.getElementById('typing-indicator');
+    if (typingIndicator) {
+        typingIndicator.remove();
+    }
+}
 
 // --- Session Management Functions ---
 
@@ -226,7 +366,6 @@ function createNewSession() {
     console.log("[createNewSession] Current UI session list after add:", currentListItems);
 }
 
-
 // --- WebSocket Functions ---
 
 // Setup WebSocket connection for a given session
@@ -237,13 +376,15 @@ function setupWebSocket(userId, sessionId) {
         webSocket.close();
     }
 
+    updateStatus('connecting');
     const wsUrl = `ws://${window.location.host}/ws/${userId}/${sessionId}`;
     console.log(`Connecting WebSocket: ${wsUrl}`);
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
         console.log(`WebSocket connection established for session ${sessionId}`);
-        // Optionally send a ping or initial message if needed by backend
+        updateStatus('online');
+        reconnectAttempts = 0; // Reset reconnect counter on successful connection
     };
 
     ws.onmessage = (event) => {
@@ -252,40 +393,114 @@ function setupWebSocket(userId, sessionId) {
             console.log("WebSocket message received:", data);
 
             if (data.type === 'partial') {
+                hideTypingIndicator(); // Remove typing indicator when first chunk arrives
                 updatePartialResponse(data.text);
             } else if (data.type === 'final') {
-                // Remove partial message if it exists before adding final
+                // Response complete - reset waiting state
+                isWaitingForResponse = false;
+                messageInput.disabled = false;
+                messageInput.focus();
+                
+                // Remove partial message and typing indicator if they exist
                 const partial = chatContainer.querySelector('.message.partial');
                 if (partial) partial.remove();
-                addMessage(data.text, 'agent');
+                hideTypingIndicator();
+                
+                // Add the final message with animation
+                const finalMessage = document.createElement('div');
+                finalMessage.classList.add('message', 'agent');
+                
+                // Convert URLs to clickable links
+                const linkedText = data.text.replace(
+                    /(https?:\/\/[^\s]+)/g, 
+                    '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+                );
+                
+                finalMessage.innerHTML = linkedText;
+                chatContainer.appendChild(finalMessage);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                
+                // Optional: Add subtle animation
+                finalMessage.style.opacity = '0';
+                finalMessage.style.transition = 'opacity 0.3s';
+                setTimeout(() => finalMessage.style.opacity = '1', 10);
             } else {
-                 addMessage(JSON.stringify(data), 'system'); // Display other messages
+                addMessage(JSON.stringify(data), 'system'); // Display other messages
             }
         } catch (error) {
             console.error("Error processing WebSocket message:", error);
             addMessage("Received malformed data from server.", 'system');
+            isWaitingForResponse = false;
+            messageInput.disabled = false;
         }
     };
 
     ws.onclose = (event) => {
         console.log(`WebSocket connection closed for session ${sessionId}. Code: ${event.code}, Reason: ${event.reason}`);
-        // Optionally try to reconnect or notify user
-        if (sessionId === currentSessionId) { // Only show error if it's the active session
-             addMessage("Connection closed. Please refresh or select a session.", 'agent');
+        updateStatus('offline');
+        
+        // Reset UI if response was pending
+        if (isWaitingForResponse) {
+            hideTypingIndicator();
+            isWaitingForResponse = false;
+            messageInput.disabled = false;
+        }
+        
+        // Try to reconnect if this is the current session and not a deliberate close
+        if (sessionId === currentSessionId && event.code !== 1000) {
+            attemptReconnect(userId, sessionId);
         }
     };
 
     ws.onerror = (error) => {
         console.error(`WebSocket error for session ${sessionId}:`, error);
-         if (sessionId === currentSessionId) {
-            addMessage("Connection error. Please refresh or select a session.", 'agent');
-         }
+        updateStatus('offline');
+        
+        if (sessionId === currentSessionId) {
+            // Don't show error if we're waiting for reconnect
+            if (!reconnectTimeout) {
+                addMessage("Connection error. Attempting to reconnect...", 'system');
+            }
+        }
     };
 
     return ws; // Return the WebSocket instance
 }
 
-// Update or create the partial response message element
+// Attempt to reconnect WebSocket with exponential backoff
+function attemptReconnect(userId, sessionId) {
+    if (reconnectAttempts >= maxReconnectAttempts) {
+        console.log("Maximum reconnection attempts reached.");
+        addMessage("Unable to reconnect after several attempts. Please refresh the page.", 'system');
+        return;
+    }
+    
+    const delay = Math.min(30000, 1000 * Math.pow(2, reconnectAttempts)); // Exponential backoff
+    console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})...`);
+    
+    clearTimeout(reconnectTimeout); // Clear any existing timeout
+    
+    reconnectTimeout = setTimeout(() => {
+        reconnectAttempts++;
+        console.log(`Reconnecting... Attempt ${reconnectAttempts}`);
+        webSocket = setupWebSocket(userId, sessionId);
+    }, delay);
+}
+
+// Handle page visibility changes
+function handleVisibilityChange() {
+    if (document.visibilityState === 'visible') {
+        // Page became visible - check connection status
+        if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
+            console.log("Page visible, connection lost - reconnecting...");
+            if (currentSessionId) {
+                webSocket = setupWebSocket(currentUserId, currentSessionId);
+            }
+        }
+    }
+}
+
+// Update or create the partial response message element with improved display
 function updatePartialResponse(text) {
     let partialMessage = chatContainer.querySelector('.message.partial');
 
@@ -295,6 +510,12 @@ function updatePartialResponse(text) {
         chatContainer.appendChild(partialMessage);
     }
 
-    partialMessage.textContent = text;
+    // Convert URLs to clickable links
+    const linkedText = text.replace(
+        /(https?:\/\/[^\s]+)/g, 
+        '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
+    
+    partialMessage.innerHTML = linkedText;
     chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to bottom
 }

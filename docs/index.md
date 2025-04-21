@@ -14,6 +14,7 @@ Welcome to the documentation for the Google ADK Agent Starter Kit. This page ser
 - [TASK.md](../TASK.md) - Current and completed tasks
 - [test_report.md](test_report.md) - Comprehensive test coverage report
 - [USER_GUIDE.md](USER_GUIDE.md) - Guide for local development vs. deployment options
+- [SESSION_STATE_USAGE.md](SESSION_STATE_USAGE.md) - Guide for using session state in agents
 
 ## Documentation Overview
 
@@ -36,6 +37,8 @@ Welcome to the documentation for the Google ADK Agent Starter Kit. This page ser
 - **[test_report.md](test_report.md)**: Detailed report on test coverage and test suite organization, demonstrating 100% code coverage.
 
 - **[USER_GUIDE.md](USER_GUIDE.md)**: Comprehensive guide explaining the differences between local development and various deployment options, with practical examples for each approach.
+
+- **[SESSION_STATE_USAGE.md](SESSION_STATE_USAGE.md)**: Detailed guide on how to effectively use session state for contextual memory, user preferences, and multi-turn interactions.
 
 ### Project Management
 
@@ -64,6 +67,7 @@ Welcome to the documentation for the Google ADK Agent Starter Kit. This page ser
 
 ## Latest Updates
 
+- April 22, 2025: Added SESSION_STATE_USAGE.md with patterns and best practices for session state
 - April 22, 2025: Added USER_GUIDE.md with comprehensive instructions for local development and deployment
 - April 22, 2025: Added test_report.md documenting 100% test coverage achievement
 - April 21, 2025: Added DIRECT_DEPLOY.md for the recommended deployment method

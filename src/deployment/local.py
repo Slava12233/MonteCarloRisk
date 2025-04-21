@@ -78,6 +78,9 @@ def create_app(agent: Any) -> FastAPI:
             sessions_list_to_process = []
 
             # Explicitly check for the observed tuple structure ('sessions', [...])
+            # Reason: Different versions of the session service API may return data in different formats.
+            # This handles the case where the API returns a tuple with 'sessions' as the first element
+            # and the actual list as the second element.
             if isinstance(raw_sessions_data, tuple) and len(raw_sessions_data) == 2 and raw_sessions_data[0] == 'sessions' and isinstance(raw_sessions_data[1], list):
                 sessions_list_to_process = raw_sessions_data[1]
                 logger.debug("Interpreted raw_sessions_data as ('sessions', [...]) structure.")
@@ -131,6 +134,9 @@ def create_app(agent: Any) -> FastAPI:
                     # Determine sender ('user' or 'agent'/'system'/'tool')
                     sender = event.author if event.author else 'unknown'
                     # Simplify agent/system/tool to 'agent' for UI consistency
+                    # Reason: The UI only distinguishes between user and agent messages,
+                    # so we map all non-user authors to 'agent' for a more consistent
+                    # display experience.
                     if sender not in ['user']:
                         sender = 'agent' # Or keep original author if needed: sender = event.author
 
@@ -143,12 +149,16 @@ def create_app(agent: Any) -> FastAPI:
                         except AttributeError:
                             logger.debug(f"Event part has no text attribute: {event.content.parts[0]}")
                             # Optionally handle other part types like function calls/responses if needed
+                            # Reason: Function calls/responses have a different structure than text
+                            # messages, so we need to handle them separately to provide useful information.
                             if event.get_function_calls():
                                 text = f"[Function Call: {event.get_function_calls()[0].name}]"
                             elif event.get_function_responses():
                                 text = f"[Function Response]" # Content might be complex
 
                     # Only add events that have some text representation
+                    # Reason: Events without text content (like start/end markers or other metadata)
+                    # aren't useful to display to the user.
                     if text is not None:
                          history.append({"sender": sender, "text": text})
                     else:
@@ -247,6 +257,9 @@ def run_locally(
             reload=reload,
         )
     except OSError as e:
+        # Reason: When the port is already in use, we want to try a different port
+        # rather than failing completely. This provides a better user experience,
+        # especially in development environments where multiple instances might be running.
         if "address already in use" in str(e).lower() or "only one usage of each socket address" in str(e).lower():
             # Try with a different port
             new_port = port + 1
