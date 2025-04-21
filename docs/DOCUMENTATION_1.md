@@ -317,8 +317,6 @@ Run the base agent in interactive mode:
 python run.py run base --interactive
 ```
 
-This will start an interactive session where you can chat with the agent.
-
 #### Programmatic Use
 
 You can also use the agent programmatically in your code:
@@ -502,34 +500,20 @@ class TestMyCustomAgent(unittest.TestCase):
 For local development and testing, you can run the agent using the CLI:
 
 ```bash
-python run.py run search --interactive
+python run.py run base --interactive
+```
+
+Or with the web interface:
+
+```bash
+python run.py run base --web
 ```
 
 ### Vertex AI Deployment
 
-For production deployment, you can deploy the agent to Vertex AI using one of two approaches:
+For production deployment, we recommend deploying the agent to Vertex AI Agent Engine using `direct_deploy.py`:
 
-#### Option 1: Vertex AI Endpoint Deployment (Alternative)
-
-This option deploys the agent as a Vertex AI endpoint using the traditional approach via `deploy.py`:
-
-1. Set up your Google Cloud project:
-   ```bash
-   gcloud config set project your-project-id
-   ```
-
-2. Enable the required APIs:
-   ```bash
-   gcloud services enable aiplatform.googleapis.com
-   ```
-
-3. Deploy the agent:
-   ```bash
-   python deploy.py --vertex --environment production
-   ```
-*(Note: This uses a different deployment script and method than Agent Engine)*
-
-#### Option 2: Vertex AI Agent Engine Deployment (Recommended)
+#### Vertex AI Agent Engine Deployment (Recommended)
 
 This option deploys the agent to Vertex AI Agent Engine, which is a fully managed service specifically designed for AI agents:
 
@@ -548,12 +532,34 @@ This option deploys the agent to Vertex AI Agent Engine, which is a fully manage
    pip install 'google-cloud-aiplatform[adk,agent_engines]'
    ```
 
-4. Deploy the agent:
+4. Deploy the agent using `direct_deploy.py`:
    ```bash
-   python deploy_agent_engine.py --environment production --staging-bucket gs://your-bucket-name
+   python direct_deploy.py
    ```
 
-For detailed instructions on deploying to Agent Engine, see the [Agent Engine Deployment Guide](docs/AGENT_ENGINE_DEPLOYMENT.md).
+   Or with environment-specific configuration:
+   ```bash
+   python direct_deploy.py --environment production
+   ```
+
+The `direct_deploy.py` script handles the following:
+- Creating a new agent in Vertex AI Agent Engine
+- Packaging the necessary code and dependencies
+- Testing the agent locally before deployment
+- Deploying the agent to Vertex AI Agent Engine
+- Updating the `chat.py` file with the new Agent Engine ID
+
+For detailed instructions on deploying to Agent Engine, see the [Direct Deploy Guide](DIRECT_DEPLOY.md).
+
+### Interacting with Deployed Agents
+
+After deployment, you can interact with the agent using the `chat.py` script, which uses the Vertex AI SDK:
+
+```bash
+python chat.py
+```
+
+This script is automatically updated by the `direct_deploy.py` script with the correct Agent Engine ID.
 
 ## Best Practices
 

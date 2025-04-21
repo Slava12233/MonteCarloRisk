@@ -146,19 +146,26 @@ python run.py run base --web --port 8000
 
 ### Testing
 
-Before deploying to production, we recommend deploying to a staging environment:
+Before deploying to production, we recommend testing the agent thoroughly locally:
 
 ```bash
-python deploy_agent_engine.py --environment staging --staging-bucket gs://your-staging-bucket
+pytest tests/
 ```
 
 ### Production
 
-For production deployments, we recommend using the production environment configuration:
+For production deployments, we recommend using `direct_deploy.py`:
 
 ```bash
-python deploy_agent_engine.py --environment production --staging-bucket gs://your-production-bucket
+python direct_deploy.py --environment production
 ```
+
+The `direct_deploy.py` script handles:
+- Creating a new agent in Vertex AI Agent Engine
+- Packaging the necessary code and dependencies
+- Testing the agent locally before deployment
+- Deploying the agent to Vertex AI Agent Engine
+- Updating the `chat.py` file with the new Agent Engine ID
 
 ### Interacting with Deployed Agents
 
