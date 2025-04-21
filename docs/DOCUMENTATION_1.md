@@ -1,5 +1,7 @@
 # Google ADK Agent Starter Kit
 
+> **Note**: This document provides comprehensive implementation details, usage guides, and tutorials for the Google ADK Agent Starter Kit. For high-level architecture, design decisions, and development roadmap, please refer to [PLANNING.md](PLANNING.md), which is the primary architectural reference document.
+
 ## Executive Summary
 
 As the co-founder and CTO of our AI Agents company, I'm pleased to present our Google ADK Agent Starter Kit. This toolkit provides a robust foundation for building intelligent agents using Google's Agent Development Kit (ADK). It implements a true custom agent architecture that follows Google's recommended patterns while providing flexibility for future expansion.

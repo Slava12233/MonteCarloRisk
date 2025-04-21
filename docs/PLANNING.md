@@ -1,5 +1,7 @@
 # Google ADK Agent Starter Kit - Architecture & Planning
 
+> **Note**: This document is the primary architectural reference for the Google ADK Agent Starter Kit. It provides a high-level strategic overview of the architecture, design decisions, extension points, and development roadmap. For comprehensive implementation details, usage guides, and tutorials, please refer to [DOCUMENTATION_1.md](DOCUMENTATION_1.md).
+
 ## Overview
 
 This document outlines the architecture, design decisions, and roadmap for the Google ADK Agent Starter Kit. It serves as a consolidated reference for developers working on or with the project.
@@ -165,6 +167,20 @@ Deployed agents can be interacted with using the `chat.py` script, which uses th
 ```bash
 python chat.py
 ```
+
+## Document Relationships
+
+This architectural guide works in conjunction with other documentation in this project:
+
+| Document | Purpose | Audience | When to Use |
+|----------|---------|----------|-------------|
+| **PLANNING.md** (this document) | High-level architecture and strategic planning | Technical leaders, new team members | When making architectural decisions or understanding system design |
+| [DOCUMENTATION_1.md](DOCUMENTATION_1.md) | Comprehensive implementation details, usage guides, and tutorials | Developers implementing features | When you need detailed instructions on implementation |
+| [USER_GUIDE.md](USER_GUIDE.md) | Practical guide for local development vs. deployment | Developers and users | When deciding which environment to use for your needs |
+| [DIRECT_DEPLOY.md](DIRECT_DEPLOY.md) | Focused guide on using direct_deploy.py | Developers deploying to production | When deploying your agent to Vertex AI Agent Engine |
+| [PYDANTIC_USAGE.md](PYDANTIC_USAGE.md) | Guidelines for using Pydantic in agent classes | Developers extending agent classes | When adding or modifying agent class parameters |
+
+When making decisions about the system architecture or design patterns, refer to this document first. For specific implementation details, refer to DOCUMENTATION_1.md.
 
 ---
 
