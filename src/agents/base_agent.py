@@ -68,7 +68,8 @@ class BaseAgent(ADKBaseAgent):
             if error:
                 raise ValueError(f"Invalid configuration: {error}")
 
-        # Validate inputs before passing to parent class
+        # Reason: We validate model and tools separately to add custom validation logic
+        # that isn't handled by the parent class
         validated_model = self._validate_model(model)
         validated_tools = self._validate_tools(tools)
         validated_app_name = app_name or name
@@ -88,7 +89,9 @@ class BaseAgent(ADKBaseAgent):
         self._tools = validated_tools
         self._app_name = validated_app_name
         
-        # Create the LLM agent that will handle the actual reasoning
+        # Reason: We use a nested LlmAgent to handle actual LLM interactions rather than
+        # implementing this logic directly in the BaseAgent. This allows us to swap out
+        # the LLM implementation without changing the rest of the agent logic.
         self._llm_agent = LlmAgent(
             name=f"{name}_llm",
             model=self._model,  # Use validated model
@@ -97,14 +100,17 @@ class BaseAgent(ADKBaseAgent):
             tools=self._tools,
         )
         
-        # Add the LLM agent as a sub-agent if not already added
+        # Reason: We add the LLM agent as a sub-agent to maintain the agent hierarchy
+        # but check first to avoid duplicates if the agent was passed in the sub_agents list
         if not any(agent.name == self._llm_agent.name for agent in self.sub_agents):
             self.sub_agents.append(self._llm_agent)
         
-        # Set up session management
+        # Reason: Session management is separated to allow for different storage options
+        # (InMemory for testing, persistent for production)
         self._session_service = session_service or InMemorySessionService()
         
-        # Create a runner for direct use
+        # Reason: We create a runner instance to simplify execution of one-off queries
+        # without requiring the user to create their own runner
         self._runner = Runner(
             agent=self,
             app_name=self._app_name,
@@ -173,7 +179,9 @@ class BaseAgent(ADKBaseAgent):
         """
         logger.info(f"[{self.name}] Starting agent execution")
         
-        # Process the user's message using the LLM agent
+        # Reason: We delegate most processing to the LLM agent because it handles
+        # the core reasoning and tool use. This pattern allows us to extend this method
+        # to implement more complex orchestration logic in subclasses.
         logger.info(f"[{self.name}] Running LLM agent")
         async for event in self._llm_agent.run_async(ctx):
             # You can add custom logic here to process events
@@ -196,7 +204,8 @@ class BaseAgent(ADKBaseAgent):
         Yields:
             Events produced by this agent or its sub-agents.
         """
-        # For now, we'll just delegate to the LLM agent
+        # Reason: For now, we simply delegate to the LLM agent for live interactions
+        # since we haven't implemented custom live processing logic yet
         async for event in self._llm_agent.run_live(ctx):
             yield event
 
@@ -250,11 +259,13 @@ class BaseAgent(ADKBaseAgent):
         Returns:
             A list of events from the agent.
         """
-        # Ensure the session exists
+        # Reason: We automatically create a session if it doesn't exist to simplify the API
+        # and reduce errors for developers interacting with the agent
         if not self.get_session(user_id, session_id):
             self.create_session(user_id, session_id)
 
-        # Convert string message to Content if needed
+        # Reason: We support both string messages and structured Content objects
+        # for flexibility, converting strings to Content objects as needed
         if isinstance(message, str):
             message = types.Content(role="user", parts=[types.Part(text=message)])
 
@@ -273,6 +284,9 @@ class BaseAgent(ADKBaseAgent):
         Returns:
             The final response text, or None if there is no final response.
         """
+        # Reason: We scan through all events to find the final response,
+        # ignoring intermediate events (like function calls) to get just the
+        # final text response to present to the user
         for event in events:
             if event.is_final_response() and event.content and event.content.parts:
                 return event.content.parts[0].text
@@ -290,5 +304,8 @@ class BaseAgent(ADKBaseAgent):
         Returns:
             The final response text, or None if there is no final response.
         """
+        # Reason: This convenience method combines running the agent and extracting
+        # the final response for simpler integration in applications that just need
+        # the final text response rather than processing all events
         events = self.run(user_id, session_id, message)
         return self.get_final_response(events)

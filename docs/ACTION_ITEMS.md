@@ -237,6 +237,10 @@ Vertex AI Agent Engine is a fully managed service specifically designed for AI a
 | April 22, 2025 | [Your Name], CTO | Completed AI-CR-10: Created USER_GUIDE.md with comprehensive instructions for local development and deployment options |
 | April 22, 2025 | [Your Name], CTO | Completed AI-CR-11: Updated README.md with current setup/usage information including local UI history |
 | April 22, 2025 | [Your Name], CTO | Completed AI-CR-01: Verified all docstrings follow Google style format consistently |
+| April 22, 2025 | [Your Name], CTO | Completed AI-CR-09: Added cross-referencing between PLANNING.md and DOCUMENTATION_1.md to clarify their relationship |
+| April 22, 2025 | [Your Name], CTO | Completed AI-CR-04: Enhanced WebSocket handling in chat.js with reconnection logic, typing indicators, and improved UX |
+| April 22, 2025 | [Your Name], CTO | Completed AI-CR-05: Created SESSION_STATE_USAGE.md with comprehensive patterns and best practices for using session.state |
+| April 22, 2025 | [Your Name], CTO | Completed AI-CR-02: Added "# Reason:" comments for non-obvious logic in base_agent.py, cli.py, and local.py |
 
 
 ## Action Items from Code Review (2025-04-21)
@@ -247,14 +251,14 @@ Vertex AI Agent Engine is a fully managed service specifically designed for AI a
 | ID      | Priority | Task                                                                 | Area          | Owner | Status  | Due Date   | Dependencies |
 |---------|----------|----------------------------------------------------------------------|---------------|-------|---------|------------|--------------|
 | AI-CR-01 | Medium   | Ensure all docstrings consistently follow Google style format        | Documentation | TBD   | Completed | April 22, 2025 |              |
-| AI-CR-02 | Low      | Add `# Reason:` comments for non-obvious logic choices               | Code Quality  | TBD   | Pending | TBD        |              |
+| AI-CR-02 | Low      | Add `# Reason:` comments for non-obvious logic choices               | Code Quality  | TBD   | Completed | April 22, 2025 |              |
 | AI-CR-03 | Low      | Re-evaluate Pydantic usage for stricter validation (if feasible)     | Code Quality  | TBD   | Pending | TBD        |              |
-| AI-CR-04 | Medium   | Enhance WebSocket handling in `chat.js` for better streaming UX      | UI/Frontend   | TBD   | Pending | TBD        |              |
-| AI-CR-05 | Low      | Define and document usage pattern for `session.state` if needed      | Functionality | TBD   | Pending | TBD        |              |
+| AI-CR-04 | Medium   | Enhance WebSocket handling in `chat.js` for better streaming UX      | UI/Frontend   | TBD   | Completed | April 22, 2025 |              |
+| AI-CR-05 | Low      | Define and document usage pattern for `session.state` if needed      | Functionality | TBD   | Completed | April 22, 2025 |              |
 | AI-CR-06 | Medium   | Implement persistent MemoryService & `load_memory` tool if needed    | Functionality | TBD   | Pending | TBD        |              |
 | AI-CR-07 | High     | Increase test coverage (config, utils, agents)                       | Testing       | TBD   | Completed | April 22, 2025 |              |
 | AI-CR-08 | Medium   | Add tests for edge cases and error conditions                        | Testing       | TBD   | Pending | TBD        |              |
-| AI-CR-09 | Medium   | Consolidate/clarify `PLANNING.md` & `DOCUMENTATION_1.md`             | Documentation | TBD   | Pending |            |              |
+| AI-CR-09 | Medium   | Consolidate/clarify `PLANNING.md` & `DOCUMENTATION_1.md`             | Documentation | TBD   | Completed | April 22, 2025 |              |
 | AI-CR-10 | High     | Create User Guide for local dev vs. deployment options               | Documentation | TBD   | Completed | April 22, 2025 |              |
 | AI-CR-11 | Medium   | Update `README.md` with current setup/usage (incl. local UI history) | Documentation | TBD   | Completed | April 22, 2025 | AI-CR-10     |
-| AI-CR-12 | Low      | Ensure `
+| AI-CR-12 | Low      | Ensure consistent architecture documentation across codebase         | Documentation | TBD   | Pending | TBD        |              |
