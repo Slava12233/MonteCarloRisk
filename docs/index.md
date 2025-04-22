@@ -7,8 +7,7 @@ Welcome to the documentation for the Google ADK Agent Starter Kit. This page ser
 - [README.md](../README.md) - Project overview and getting started guide
 - [PLANNING.md](PLANNING.md) - Architecture, design decisions, and development roadmap
 - [DOCUMENTATION_1.md](DOCUMENTATION_1.md) - Comprehensive technical documentation
-- [DIRECT_DEPLOY.md](DIRECT_DEPLOY.md) - Guide for direct deployment to Vertex AI Agent Engine (recommended)
-- [AGENT_ENGINE_DEPLOYMENT.md](AGENT_ENGINE_DEPLOYMENT.md) - Comprehensive guide for Vertex AI Agent Engine deployment
+- [DEPLOYMENT_GUIDE.md](../DEPLOYMENT_GUIDE.md) - Unified guide for all deployment options (recommended)
 - [PYDANTIC_USAGE.md](PYDANTIC_USAGE.md) - Guidelines for using Pydantic in agent classes
 - [ACTION_ITEMS.md](ACTION_ITEMS.md) - Action items and improvements for the project
 - [TASK.md](../TASK.md) - Current and completed tasks
@@ -28,9 +27,7 @@ Welcome to the documentation for the Google ADK Agent Starter Kit. This page ser
 
 ### Specialized Guides
 
-- **[DIRECT_DEPLOY.md](DIRECT_DEPLOY.md)**: Focused guide on using the streamlined direct_deploy.py script for quick and reliable deployment to Vertex AI Agent Engine.
-
-- **[AGENT_ENGINE_DEPLOYMENT.md](AGENT_ENGINE_DEPLOYMENT.md)**: Detailed guide for deploying agents to Google Cloud's Vertex AI Agent Engine, including prerequisites, deployment infrastructure, process, monitoring, troubleshooting, and best practices.
+- **[DEPLOYMENT_GUIDE.md](../DEPLOYMENT_GUIDE.md)**: Unified guide for deploying agents to Vertex AI Agent Engine, covering SDK-based management and direct deployment.
 
 - **[PYDANTIC_USAGE.md](PYDANTIC_USAGE.md)**: Guidelines for using Pydantic in agent classes, explaining the hybrid approach adopted in this project.
 
@@ -67,6 +64,7 @@ Welcome to the documentation for the Google ADK Agent Starter Kit. This page ser
 
 ## Latest Updates
 
+- April 22, 2025: Consolidated deployment documentation into a unified DEPLOYMENT_GUIDE.md
 - April 22, 2025: Added SESSION_STATE_USAGE.md with patterns and best practices for session state
 - April 22, 2025: Added USER_GUIDE.md with comprehensive instructions for local development and deployment
 - April 22, 2025: Added test_report.md documenting 100% test coverage achievement

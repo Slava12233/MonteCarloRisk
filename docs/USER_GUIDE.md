@@ -12,8 +12,8 @@ This guide provides clear instructions for both local development and deployment
    - [Running with Web UI](#running-with-web-ui)
    - [Developing Custom Agents](#developing-custom-agents)
 3. [Deployment Options](#deployment-options)
-   - [Option 1: Direct Deployment (Recommended)](#option-1-direct-deployment-recommended)
-   - [Option 2: Configurable Deployment](#option-2-configurable-deployment)
+   - [Option 1: SDK-based Agent Management (Recommended)](#option-1-sdk-based-agent-management-recommended)
+   - [Option 2: Direct Deployment](#option-2-direct-deployment)
 4. [Interacting with Deployed Agents](#interacting-with-deployed-agents)
 5. [Comparison of Options](#comparison-of-options)
 6. [Troubleshooting](#troubleshooting)
@@ -145,11 +145,32 @@ Key features of the Web UI:
 
 ## Deployment Options
 
-We offer two deployment approaches for running your agents in production on Google Cloud's Vertex AI Agent Engine:
+We offer two deployment approaches for running your agents in production on Google Cloud's Vertex AI Agent Engine. For comprehensive details, refer to our [unified deployment guide](../DEPLOYMENT_GUIDE.md).
 
-### Option 1: Direct Deployment (Recommended)
+### Option 1: SDK-based Agent Management (Recommended)
 
-The simplest deployment method using `direct_deploy.py`:
+The most flexible approach for managing agents throughout their lifecycle:
+
+```bash
+# List existing agents
+python sdk_agent_deploy.py list --project-id your-project-id
+
+# Deploy a new test agent
+python sdk_agent_deploy.py deploy --name your_agent_name --project-id your-project-id
+
+# Test a deployed agent
+python sdk_agent_deploy.py test --agent-id <AGENT_ID> --project-id your-project-id 
+```
+
+**Benefits:**
+- Complete control over agent lifecycle (list, create, test, delete)
+- Easy management of multiple agents
+- Robust error handling and diagnostics
+- Support for different agent configurations
+
+### Option 2: Direct Deployment
+
+For quickly deploying the built-in BaseAgent implementation:
 
 ```bash
 python direct_deploy.py
@@ -162,30 +183,7 @@ python direct_deploy.py
 - Updates `chat.py` with the new Agent Engine ID
 - Creates a backup of the original configuration
 
-**Requirements:**
-- `.env` file with:
-  - `GOOGLE_CLOUD_PROJECT`
-  - `STAGING_BUCKET` 
-  - `GOOGLE_CLOUD_REGION` (optional, defaults to us-central1)
-- Authenticated with `gcloud auth application-default login`
-
-### Option 2: Configurable Deployment
-
-For more complex deployment scenarios using `deploy_agent_engine.py`:
-
-```bash
-python deploy_agent_engine.py --environment production --staging-bucket gs://your-bucket
-```
-
-**Benefits:**
-- Supports multiple environments (development, staging, production)
-- Highly configurable via YAML files
-- More advanced deployment options
-
-**Requirements:**
-- Environment-specific YAML configuration in `environments/`
-- Command-line arguments for customization
-- Authenticated with `gcloud auth application-default login`
+Refer to our [unified deployment guide](../DEPLOYMENT_GUIDE.md) for complete details on both deployment options, including prerequisites, configuration, and troubleshooting.
 
 ## Interacting with Deployed Agents
 
@@ -242,7 +240,7 @@ This script:
 - Check the Agent Engine ID in `chat.py`
 - Ensure your project has quota for Vertex AI Agent Engine
 
-For more detailed troubleshooting, refer to the [AGENT_ENGINE_DEPLOYMENT.md](AGENT_ENGINE_DEPLOYMENT.md) guide.
+For more detailed troubleshooting, refer to the [Deployment Guide](../DEPLOYMENT_GUIDE.md).
 
 ---
 

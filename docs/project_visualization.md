@@ -403,6 +403,232 @@ sequenceDiagram
 
 ---
 
+## 6. Deployment Process
+
+The MonteCarloRisk_AI project offers several deployment options, each with its own use cases and advantages. This section provides a comprehensive overview of the deployment process with visual diagrams.
+
+### 6.1. Deployment Options Overview
+
+```mermaid
+graph TD
+    DeploymentOptions["Deployment Options"] --> LocalDev["Local Development"]
+    DeploymentOptions --> VertexAI["Vertex AI Agent Engine"]
+    
+    LocalDev --> LocalCLI["CLI Interactive Mode"]
+    LocalDev --> LocalWebUI["Web UI (FastAPI)"]
+    
+    VertexAI --> DirectDeploy["Direct Deployment<br>(direct_deploy.py)"]
+    VertexAI --> SDKDeploy["SDK-based Deployment<br>(sdk_agent_deploy.py)"]
+    
+    SDKDeploy --> ListAgents["List Agents"]
+    SDKDeploy --> CreateAgents["Create Agents"]
+    SDKDeploy --> TestAgents["Test Agents"]
+    SDKDeploy --> DeleteAgents["Delete Agents"]
+    
+    style DeploymentOptions fill:#f9f,stroke:#333,stroke-width:2px
+    style VertexAI fill:#bbf,stroke:#333,stroke-width:1px
+    style LocalDev fill:#bfb,stroke:#333,stroke-width:1px
+    style DirectDeploy fill:#fbb,stroke:#333,stroke-width:1px
+    style SDKDeploy fill:#fbb,stroke:#333,stroke-width:1px
+```
+
+### 6.2. Unified Deployment Architecture
+
+The project has evolved to a simplified, consolidated deployment architecture that uses a consistent pattern:
+
+```mermaid
+graph TD
+    RootLaunchers["Root Directory<br>Launcher Scripts"] --> direct_deploy["direct_deploy.py<br>Launcher"]
+    RootLaunchers --> sdk_agent_deploy["sdk_agent_deploy.py<br>Launcher"]
+    RootLaunchers --> chat["chat.py<br>Interaction Script"]
+    
+    direct_deploy --> SrcDirect["src/deployment/<br>direct_deploy.py"]
+    sdk_agent_deploy --> SrcSDK["src/deployment/<br>sdk_agent_deploy.py"]
+    
+    SrcDirect --> AgentEngine["Vertex AI<br>Agent Engine"]
+    SrcSDK --> AgentEngine
+    
+    AgentEngine --> DeployedAgent["Deployed Agent"]
+    
+    DeployedAgent --> chat
+    
+    style RootLaunchers fill:#f9f,stroke:#333,stroke-width:2px
+    style AgentEngine fill:#bbf,stroke:#333,stroke-width:1px
+    style DeployedAgent fill:#fbb,stroke:#333,stroke-width:1px
+```
+
+### 6.3. SDK-based Deployment Process
+
+The SDK-based deployment approach (`sdk_agent_deploy.py`) offers comprehensive management of agents throughout their lifecycle:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant SDKLauncher as "sdk_agent_deploy.py<br>(Launcher)"
+    participant SDKImplementation as "src/deployment/<br>sdk_agent_deploy.py"
+    participant GoogleCloud as "Google Cloud SDK"
+    participant VertexAI as "Vertex AI<br>Agent Engine"
+    participant StorageBucket as "Cloud Storage<br>Bucket"
+    
+    User->>SDKLauncher: python sdk_agent_deploy.py deploy<br>--name my_agent --project-id my-project
+    SDKLauncher->>SDKImplementation: Forward arguments
+    
+    Note over SDKImplementation: Import required modules
+    SDKImplementation->>GoogleCloud: Initialize credentials
+    
+    Note over SDKImplementation: Create agent instance
+    SDKImplementation->>StorageBucket: Check/Create staging bucket
+    
+    Note over SDKImplementation: Test agent locally
+    
+    SDKImplementation->>VertexAI: Deploy agent
+    Note over VertexAI: Agent creation process
+    VertexAI-->>SDKImplementation: Return Agent ID
+    
+    SDKImplementation-->>User: Display Agent ID and<br>next steps
+    
+    Note over User: Later: Test the agent
+    User->>SDKLauncher: python sdk_agent_deploy.py test<br>--agent-id AGENT_ID --project-id my-project
+    SDKLauncher->>SDKImplementation: Forward arguments
+    SDKImplementation->>VertexAI: Connect to agent
+    SDKImplementation->>VertexAI: Send test message
+    VertexAI-->>SDKImplementation: Return response
+    SDKImplementation-->>User: Display agent response
+```
+
+### 6.4. Direct Deployment Process
+
+The direct deployment approach (`direct_deploy.py`) offers a streamlined, simplified deployment process:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant DirectLauncher as "direct_deploy.py<br>(Launcher)"
+    participant DirectImplementation as "src/deployment/<br>direct_deploy.py"
+    participant BaseAgent as "BaseAgent"
+    participant VertexAI as "Vertex AI<br>Agent Engine"
+    participant ChatScript as "chat.py"
+    
+    User->>DirectLauncher: python direct_deploy.py
+    DirectLauncher->>DirectImplementation: Call main()
+    
+    Note over DirectImplementation: Load environment variables
+    
+    DirectImplementation->>BaseAgent: Create agent instance
+    Note over BaseAgent: Configure with tools
+    
+    Note over DirectImplementation: Test agent locally
+    
+    DirectImplementation->>VertexAI: Deploy to Agent Engine
+    Note over VertexAI: Agent creation process
+    VertexAI-->>DirectImplementation: Return Agent Engine ID
+    
+    DirectImplementation->>VertexAI: Test remote agent
+    
+    DirectImplementation->>ChatScript: Update with new Agent ID
+    Note over ChatScript: Create backup of original
+    
+    DirectImplementation-->>User: Display success message<br>and instructions
+    
+    User->>ChatScript: python chat.py
+    ChatScript->>VertexAI: Connect to deployed agent
+    Note over User,VertexAI: Interactive conversation
+```
+
+### 6.5. Agent Engine API Endpoints
+
+Both deployment approaches interact with Vertex AI Agent Engine via API endpoints:
+
+```mermaid
+graph TD
+    DeploymentScripts["Deployment Scripts"] --> Endpoints["API Endpoints"]
+    
+    Endpoints --> V1["/v1/projects/{project}/locations/{location}/agentEngines"]
+    Endpoints --> V1P["v1/projects/{project}/locations/{location}/publishers/google/agentEngines"]
+    Endpoints --> VBeta["v1beta/projects/{project}/locations/{location}/agentEngines"]
+    
+    V1 --> Create["Create Agent"]
+    V1 --> List["List Agents"]
+    V1 --> Get["Get Agent Details"]
+    V1 --> Delete["Delete Agent"]
+    
+    style DeploymentScripts fill:#f9f,stroke:#333,stroke-width:2px
+    style Endpoints fill:#bbf,stroke:#333,stroke-width:1px
+```
+
+### 6.6. Deployment Directory Structure
+
+The deployment components are organized in a specific way to maintain separation of concerns:
+
+```mermaid
+graph TD
+    RootDir["Project Root"] --> SrcDir["src/"]
+    RootDir --> LauncherScripts["Launcher Scripts"]
+    RootDir --> DocFiles["Documentation Files"]
+    
+    SrcDir --> DeploymentDir["deployment/"]
+    
+    DeploymentDir --> DirectDeploy["direct_deploy.py"]
+    DeploymentDir --> SDKDeploy["sdk_agent_deploy.py"]
+    DeploymentDir --> LocalDeploy["local.py"]
+    
+    LauncherScripts --> DirectLauncher["direct_deploy.py"]
+    LauncherScripts --> SDKLauncher["sdk_agent_deploy.py"]
+    LauncherScripts --> Chat["chat.py"]
+    
+    DocFiles --> DeployGuide["DEPLOYMENT_GUIDE.md"]
+    
+    style RootDir fill:#f9f,stroke:#333,stroke-width:2px
+    style DeploymentDir fill:#bbf,stroke:#333,stroke-width:1px
+    style LauncherScripts fill:#fbb,stroke:#333,stroke-width:1px
+```
+
+### 6.7. Complete Deployment Workflow
+
+The complete workflow from development to production involves multiple steps:
+
+```mermaid
+graph LR
+    subgraph Development
+        LocalDev["Local Development"] --> TestingLocal["Local Testing"]
+        TestingLocal --> CodeReview["Code Review"]
+    end
+    
+    subgraph Deployment
+        CodeReview --> ChooseMethod["Choose Deployment Method"]
+        ChooseMethod --> SDKD["SDK-based Deployment"]
+        ChooseMethod --> DirectD["Direct Deployment"]
+        SDKD --> AgentEngine["Vertex AI Agent Engine"]
+        DirectD --> AgentEngine
+    end
+    
+    subgraph Production
+        AgentEngine --> Interact["Interact with Agent"]
+        Interact --> Monitor["Monitor Performance"]
+        Monitor --> Maintenance["Maintenance/Updates"]
+        Maintenance -.-> LocalDev
+    end
+    
+    style Development fill:#bfb,stroke:#333,stroke-width:1px
+    style Deployment fill:#bbf,stroke:#333,stroke-width:1px
+    style Production fill:#fbb,stroke:#333,stroke-width:1px
+```
+
+### 6.8. Deployment Command Examples
+
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `python run.py run base --interactive` | Run agent locally in interactive mode | `python run.py run base --interactive` |
+| `python run.py run base --web` | Run agent locally with web UI | `python run.py run base --web --port 8000` |
+| `python direct_deploy.py` | Deploy agent to Vertex AI using direct deployment | `python direct_deploy.py` |
+| `python sdk_agent_deploy.py list` | List deployed agents | `python sdk_agent_deploy.py list --project-id my-project` |
+| `python sdk_agent_deploy.py deploy` | Create and deploy a new agent | `python sdk_agent_deploy.py deploy --name my_agent --project-id my-project` |
+| `python sdk_agent_deploy.py test` | Test a deployed agent | `python sdk_agent_deploy.py test --agent-id AGENT_ID --project-id my-project` |
+| `python sdk_agent_deploy.py delete` | Delete a deployed agent | `python sdk_agent_deploy.py delete --agent-id AGENT_ID --project-id my-project` |
+| `python chat.py` | Interact with deployed agent | `python chat.py` |
+
+---
+
 ## 7. Basic Usage Examples
 
 ### 7.1. Interactive Mode (Base Agent)
@@ -497,3 +723,4 @@ Example output from direct_deploy.py:
 2025-04-21 08:37:52,590 - direct_deploy - INFO - Direct deployment completed successfully!
 2025-04-21 08:37:52,590 - direct_deploy - INFO - Agent Engine ID: 1578942677951447040
 2025-04-21 08:37:52,590 - direct_deploy - INFO - You can now interact with your agent using 'python chat.py'
+```

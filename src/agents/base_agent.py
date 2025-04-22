@@ -18,7 +18,8 @@ from google.genai import types
 
 from ..config import DEFAULT_MODEL, get_config, validate_config, DEV_MODE
 
-# Configure logging
+# Reason: Centralized logging configuration ensures consistent log format and levels
+# across all agent operations, simplifying debugging and monitoring
 logger = logging.getLogger(__name__)
 
 
@@ -31,7 +32,8 @@ class BaseAgent(ADKBaseAgent):
     and implements custom orchestration logic.
     """
 
-    # Define model_config for Pydantic
+    # Reason: Allow Pydantic to handle complex types (like Runner, LlmAgent) that
+    # wouldn't normally be serializable in Pydantic models
     model_config = {"arbitrary_types_allowed": True}
 
     # These are instance attributes, not Pydantic fields
@@ -62,7 +64,8 @@ class BaseAgent(ADKBaseAgent):
             app_name: The name of the application (default: agent name).
             **kwargs: Additional keyword arguments to pass to the parent class.
         """
-        # Validate configuration (skip in development mode)
+        # Reason: Configuration validation is crucial in production to prevent runtime errors,
+        # but can be bypassed in development mode for faster iteration and testing
         if DEV_MODE is not True:  # Use is not True to handle None case
             error = validate_config()
             if error:
@@ -74,7 +77,8 @@ class BaseAgent(ADKBaseAgent):
         validated_tools = self._validate_tools(tools)
         validated_app_name = app_name or name
 
-        # Initialize the parent class first
+        # Reason: Initialize the parent class first to ensure all ADK-required attributes
+        # are properly set before adding our custom functionality
         super().__init__(
             name=name,
             description=description,
@@ -82,8 +86,8 @@ class BaseAgent(ADKBaseAgent):
             **kwargs,
         )
         
-        # Store parameters as instance attributes with leading underscore
-        # to indicate they are "private"
+        # Reason: Store parameters as instance attributes with leading underscore
+        # to indicate they are "private" implementation details not meant for direct access
         self._model = validated_model
         self._instruction = instruction
         self._tools = validated_tools
@@ -132,6 +136,8 @@ class BaseAgent(ADKBaseAgent):
         Raises:
             ValueError: If the model is invalid.
         """
+        # Reason: Fallback to default model ensures the agent can still function
+        # even if no model is specified, reducing errors in simple use cases
         if not model:
             return DEFAULT_MODEL
             
@@ -154,6 +160,8 @@ class BaseAgent(ADKBaseAgent):
         Raises:
             ValueError: If any tool is invalid.
         """
+        # Reason: Initialize with empty list to avoid None checks throughout the code
+        # and ensure type consistency in all code paths
         if not tools:
             return []
             
@@ -177,6 +185,8 @@ class BaseAgent(ADKBaseAgent):
         Yields:
             Events produced by this agent or its sub-agents.
         """
+        # Reason: Detailed logging throughout the execution path helps track agent
+        # behavior and diagnose issues in complex multi-agent deployments
         logger.info(f"[{self.name}] Starting agent execution")
         
         # Reason: We delegate most processing to the LLM agent because it handles
@@ -184,8 +194,9 @@ class BaseAgent(ADKBaseAgent):
         # to implement more complex orchestration logic in subclasses.
         logger.info(f"[{self.name}] Running LLM agent")
         async for event in self._llm_agent.run_async(ctx):
-            # You can add custom logic here to process events
-            # For example, you could inspect the event, modify it, or take actions based on it
+            # Reason: This is a hook point where subclasses can intercept and transform
+            # events before they're returned to the caller, enabling custom processing
+            # without having to override the entire method
             
             # For now, we'll just pass the event through
             yield event
@@ -221,6 +232,8 @@ class BaseAgent(ADKBaseAgent):
         Returns:
             The created session.
         """
+        # Reason: Session creation is abstracted to handle the details of working with
+        # the session service, making it easier to use in high-level application code
         session = self._session_service.create_session(
             app_name=self._app_name,
             user_id=user_id,
@@ -241,6 +254,8 @@ class BaseAgent(ADKBaseAgent):
         Returns:
             The session, or None if it doesn't exist.
         """
+        # Reason: This method abstracts session retrieval to simplify client code
+        # and maintain consistency with how sessions are accessed throughout the app
         return self._session_service.get_session(
             app_name=self._app_name,
             user_id=user_id,
@@ -269,7 +284,8 @@ class BaseAgent(ADKBaseAgent):
         if isinstance(message, str):
             message = types.Content(role="user", parts=[types.Part(text=message)])
 
-        # Run the agent
+        # Reason: Using the runner instead of directly calling run_async allows us to
+        # handle the async-to-sync conversion and event collection automatically
         logger.info(f"Running agent: {self.name} for user: {user_id}, session: {session_id}")
         events = list(self._runner.run(user_id=user_id, session_id=session_id, new_message=message))
         return events

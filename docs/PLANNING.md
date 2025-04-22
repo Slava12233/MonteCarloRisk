@@ -154,18 +154,19 @@ pytest tests/
 
 ### Production
 
-For production deployments, we recommend using `direct_deploy.py`:
+For production deployments, we provide two complementary approaches:
 
-```bash
-python direct_deploy.py --environment production
-```
+1. **SDK-based Agent Management** - For managing agents (list, deploy, test, delete):
+   ```bash
+   python sdk_agent_deploy.py list --project-id your-project-id
+   ```
 
-The `direct_deploy.py` script handles:
-- Creating a new agent in Vertex AI Agent Engine
-- Packaging the necessary code and dependencies
-- Testing the agent locally before deployment
-- Deploying the agent to Vertex AI Agent Engine
-- Updating the `chat.py` file with the new Agent Engine ID
+2. **Direct Deployment** - For deploying the built-in BaseAgent:
+   ```bash
+   python direct_deploy.py
+   ```
+
+See the [Deployment Guide](../DEPLOYMENT_GUIDE.md) for detailed instructions.
 
 ### Interacting with Deployed Agents
 
@@ -184,7 +185,7 @@ This architectural guide works in conjunction with other documentation in this p
 | **PLANNING.md** (this document) | High-level architecture and strategic planning | Technical leaders, new team members | When making architectural decisions or understanding system design |
 | [DOCUMENTATION_1.md](DOCUMENTATION_1.md) | Comprehensive implementation details, usage guides, and tutorials | Developers implementing features | When you need detailed instructions on implementation |
 | [USER_GUIDE.md](USER_GUIDE.md) | Practical guide for local development vs. deployment | Developers and users | When deciding which environment to use for your needs |
-| [DIRECT_DEPLOY.md](DIRECT_DEPLOY.md) | Focused guide on using direct_deploy.py | Developers deploying to production | When deploying your agent to Vertex AI Agent Engine |
+| [DEPLOYMENT_GUIDE.md](../DEPLOYMENT_GUIDE.md) | Unified guide for deployment options | Developers deploying to production | When deploying your agent to Vertex AI Agent Engine |
 | [PYDANTIC_USAGE.md](PYDANTIC_USAGE.md) | Guidelines for using Pydantic in agent classes | Developers extending agent classes | When adding or modifying agent class parameters |
 
 When making decisions about the system architecture or design patterns, refer to this document first. For specific implementation details, refer to DOCUMENTATION_1.md.

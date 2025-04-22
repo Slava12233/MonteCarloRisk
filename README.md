@@ -219,51 +219,33 @@ If the page shows ERR_EMPTY_RESPONSE despite the server starting, check browser 
 
 #### Vertex AI Agent Engine Deployment
 
-For deploying to Vertex AI Agent Engine:
+For deploying to Vertex AI Agent Engine, we provide two complementary approaches. See our [comprehensive deployment guide](DEPLOYMENT_GUIDE.md) for detailed instructions.
 
-##### Using direct_deploy.py (Recommended Method)
+##### SDK-based Agent Management
 
-The simplest and most reliable deployment method:
+For managing your agents (list, deploy, test, delete) using the Google Cloud SDK:
+
+```bash
+# List existing agents
+python sdk_agent_deploy.py list --project-id your-project-id
+
+# Deploy a new test agent
+python sdk_agent_deploy.py deploy --name your_agent_name --project-id your-project-id
+
+# Test a deployed agent
+python sdk_agent_deploy.py test --agent-id <AGENT_ID> --project-id your-project-id
+```
+
+##### Direct Deployment
+
+For deploying the built-in BaseAgent implementation:
 
 ```bash
 # Ensure your .env file has GOOGLE_CLOUD_PROJECT and STAGING_BUCKET set
 python direct_deploy.py
 ```
 
-This streamlined script:
-- Reads configuration from environment variables
-- Creates and tests the agent locally
-- Deploys to Vertex AI Agent Engine
-- Automatically updates chat.py with the new Agent Engine ID
-- Creates a backup of the original chat.py file
-
-See `docs/DIRECT_DEPLOY.md` for full details and environment variable configuration.
-
-##### Using deploy_agent_engine.py (Alternative Method)
-
-For deployments with complex configuration requirements:
-
-```bash
-# Ensure environments/your_env.yaml is configured with project_id, etc.
-# Ensure you have run 'gcloud auth application-default login'
-python deploy_agent_engine.py --environment <your_env> --staging-bucket gs://your-bucket-name
-```
-
-For redeploying after making changes to the codebase, you can use the automated redeployment script:
-
-```bash
-# This script handles both deployment and updating chat.py with the new Agent Engine ID
-python redeploy.py --environment <your_env>
-```
-
-The deployment scripts read configuration values from your `.env` file:
-- `GOOGLE_CLOUD_PROJECT`
-- `STAGING_BUCKET`
-- `GOOGLE_CLOUD_REGION`
-
-You can also override these values with command-line arguments.
-
-See `docs/AGENT_ENGINE_DEPLOYMENT.md` for full details and troubleshooting.
+See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for complete details on both deployment options.
 
 #### Interacting with Deployed Agent
 
@@ -280,8 +262,7 @@ For more detailed documentation, see:
 
 - [Documentation Index](docs/index.md) - Central index of all documentation resources.
 - [User Guide](docs/USER_GUIDE.md) - Comprehensive guide comparing local development vs. deployment options.
-- [Direct Deployment Guide](docs/DIRECT_DEPLOY.md) - Guide for the recommended deployment method.
-- [Agent Engine Deployment Guide](docs/AGENT_ENGINE_DEPLOYMENT.md) - Comprehensive guide for Vertex AI Agent Engine deployment.
+- [Deployment Guide](DEPLOYMENT_GUIDE.md) - Unified guide for all deployment options.
 - [Planning Document](docs/PLANNING.md) - Project architecture and design decisions.
 - [Task List](TASK.md) - Current and completed tasks.
 - [Pydantic Usage Guidelines](docs/PYDANTIC_USAGE.md) - Guidelines for using Pydantic in agent classes.

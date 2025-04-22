@@ -511,45 +511,34 @@ python run.py run base --web
 
 ### Vertex AI Deployment
 
-For production deployment, we recommend deploying the agent to Vertex AI Agent Engine using `direct_deploy.py`:
+For production deployment, we provide two complementary approaches for deploying to Vertex AI Agent Engine. See our [comprehensive deployment guide](../DEPLOYMENT_GUIDE.md) for detailed instructions.
 
-#### Vertex AI Agent Engine Deployment (Recommended)
+#### SDK-based Agent Management
 
-This option deploys the agent to Vertex AI Agent Engine, which is a fully managed service specifically designed for AI agents:
+For managing your agents (list, deploy, test, delete) using the Google Cloud SDK:
 
-1. Set up your Google Cloud project:
-   ```bash
-   gcloud config set project your-project-id
-   ```
+```bash
+# List existing agents
+python sdk_agent_deploy.py list --project-id your-project-id
 
-2. Enable the required APIs:
-   ```bash
-   gcloud services enable aiplatform.googleapis.com
-   ```
+# Deploy a new test agent
+python sdk_agent_deploy.py deploy --name your_agent_name --project-id your-project-id
+```
 
-3. Install the required dependencies:
-   ```bash
-   pip install 'google-cloud-aiplatform[adk,agent_engines]'
-   ```
+#### Direct Deployment to Agent Engine
 
-4. Deploy the agent using `direct_deploy.py`:
-   ```bash
-   python direct_deploy.py
-   ```
+For quickly deploying the built-in BaseAgent implementation:
 
-   Or with environment-specific configuration:
-   ```bash
-   python direct_deploy.py --environment production
-   ```
+```bash
+python direct_deploy.py
+```
 
-The `direct_deploy.py` script handles the following:
-- Creating a new agent in Vertex AI Agent Engine
-- Packaging the necessary code and dependencies
-- Testing the agent locally before deployment
-- Deploying the agent to Vertex AI Agent Engine
-- Updating the `chat.py` file with the new Agent Engine ID
-
-For detailed instructions on deploying to Agent Engine, see the [Direct Deploy Guide](DIRECT_DEPLOY.md).
+The [deployment guide](../DEPLOYMENT_GUIDE.md) covers all details including:
+- Environment setup and prerequisites
+- Configuration options
+- Deployment workflows
+- Troubleshooting common issues
+- Best practices
 
 ### Interacting with Deployed Agents
 
@@ -680,7 +669,7 @@ logger.debug(f"Session state: {ctx.session.state}")
 - [README.md](../README.md) - Overview and getting started guide
 - [PLANNING.md](PLANNING.md) - Architecture, design decisions, and development roadmap
 - [PYDANTIC_USAGE.md](PYDANTIC_USAGE.md) - Guidelines for using Pydantic in agent classes
-- [AGENT_ENGINE_DEPLOYMENT.md](AGENT_ENGINE_DEPLOYMENT.md) - Guide for deploying to Vertex AI Agent Engine
+- [DEPLOYMENT_GUIDE.md](../DEPLOYMENT_GUIDE.md) - Unified guide for deploying to Vertex AI Agent Engine
 - [ACTION_ITEMS.md](ACTION_ITEMS.md) - Action items and improvements for the project
 - [TASK.md](../TASK.md) - Current and completed tasks
 
@@ -750,7 +739,7 @@ For additional information about the project, please refer to the following reso
 
 - [PLANNING.md](PLANNING.md) - A consolidated reference for the project's architecture, design decisions, and development roadmap.
 - [PYDANTIC_USAGE.md](PYDANTIC_USAGE.md) - Guidelines for using Pydantic in agent classes.
-- [AGENT_ENGINE_DEPLOYMENT.md](AGENT_ENGINE_DEPLOYMENT.md) - Detailed guide for deploying to Vertex AI Agent Engine.
+- [DEPLOYMENT_GUIDE.md](../DEPLOYMENT_GUIDE.md) - Detailed guide for deploying to Vertex AI Agent Engine.
 
 ## Pydantic Usage
 
